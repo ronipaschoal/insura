@@ -23,13 +23,12 @@ class HomePage extends StatelessWidget {
 
   void _onDestinationSelected(BuildContext context, int index) {
     context.read<HomeCubit>().selectDestination(index);
-    if (index == 1) {
-      context.push(
-        Uri(
-          path: AppRoutes.webview,
-          queryParameters: {'url': 'https://example.com', 'title': 'WebView'},
-        ).toString(),
-      );
+    // Only "Home/Seguros" (index 0) has a real screen today; the rest of
+    // the menu items from the new nav design have no feature built yet.
+    if (index != 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Em breve!')));
     }
   }
 
@@ -46,6 +45,7 @@ class HomePage extends StatelessWidget {
         builder: (context, state) {
           return ResponsiveScaffold(
             destinations: homeNavDestinations,
+            userName: state.userName,
             selectedIndex: state.selectedIndex,
             onDestinationSelected: (index) =>
                 _onDestinationSelected(context, index),

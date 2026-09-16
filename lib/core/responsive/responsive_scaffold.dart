@@ -2,16 +2,18 @@ import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
 import '../widgets/insura_logo.dart';
+import 'app_side_menu.dart';
 import 'breakpoints.dart';
 
-/// Navigation shell shared by authenticated screens: a side menu
-/// ([NavigationRail], collapsible via the leading menu button) on
-/// desktop/web widths, a [Drawer] ([NavigationDrawer]) on mobile widths.
+/// Navigation shell shared by authenticated screens: a fixed side menu
+/// ([AppSideMenu], collapsible via the leading menu button) on desktop/web
+/// widths, a [Drawer] wrapping the same menu on mobile widths.
 class ResponsiveScaffold extends StatefulWidget {
   const ResponsiveScaffold({
     super.key,
     required this.body,
     required this.destinations,
+    required this.userName,
     this.selectedIndex = 0,
     this.onDestinationSelected,
     this.onLogout,
@@ -20,6 +22,7 @@ class ResponsiveScaffold extends StatefulWidget {
 
   final Widget body;
   final List<NavigationDestination> destinations;
+  final String userName;
   final int selectedIndex;
   final ValueChanged<int>? onDestinationSelected;
   final VoidCallback? onLogout;
@@ -32,6 +35,15 @@ class ResponsiveScaffold extends StatefulWidget {
 class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
   final _scaffoldKey = GlobalKey<ScaffoldState>();
   bool _railExpanded = true;
+  // Mirrors _railExpanded, but only flips to true once the sidebar has
+  // finished growing back to _expandedWidth (see AnimatedContainer.onEnd
+  // below) — showing full-width labels/header while the container is still
+  // narrower than that overflows AppSideMenu's expanded layout. Collapsing
+  // is safe to apply immediately since shrinking content never overflows.
+  bool _menuContentExpanded = true;
+
+  static const _expandedWidth = 260.0;
+  static const _collapsedWidth = 72.0;
 
   @override
   Widget build(BuildContext context) {
@@ -59,7 +71,10 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
             tooltip: isDesktop ? 'Recolher/expandir menu' : 'Abrir menu',
             onPressed: () {
               if (isDesktop) {
-                setState(() => _railExpanded = !_railExpanded);
+                setState(() {
+                  _railExpanded = !_railExpanded;
+                  if (!_railExpanded) _menuContentExpanded = false;
+                });
               } else {
                 _scaffoldKey.currentState?.openDrawer();
               }
@@ -81,84 +96,47 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
         ),
         drawer: isDesktop
             ? null
-            : NavigationDrawer(
+            : Drawer(
                 backgroundColor: AppColors.homeSurface,
-                selectedIndex: widget.selectedIndex,
-                onDestinationSelected: (index) {
-                  Navigator.of(context).pop();
-                  widget.onDestinationSelected?.call(index);
-                },
-                children: [
-                  for (final destination in widget.destinations)
-                    NavigationDrawerDestination(
-                      icon: destination.icon,
-                      selectedIcon: destination.selectedIcon,
-                      label: Text(destination.label),
-                    ),
-                  if (widget.onLogout != null) ...[
-                    const Divider(),
-                    ListTile(
-                      leading: const Icon(Icons.logout),
-                      title: const Text('Sair'),
-                      onTap: () {
-                        Navigator.of(context).pop();
-                        widget.onLogout!();
-                      },
-                    ),
-                  ],
-                ],
+                child: SafeArea(
+                  child: AppSideMenu(
+                    userName: widget.userName,
+                    destinations: widget.destinations,
+                    selectedIndex: widget.selectedIndex,
+                    expanded: true,
+                    onDestinationSelected: (index) {
+                      Navigator.of(context).pop();
+                      widget.onDestinationSelected?.call(index);
+                    },
+                    onLogout: widget.onLogout == null
+                        ? null
+                        : () {
+                            Navigator.of(context).pop();
+                            widget.onLogout!();
+                          },
+                  ),
+                ),
               ),
         body: isDesktop
             ? Row(
                 children: [
-                  NavigationRail(
-                    extended: _railExpanded,
-                    minExtendedWidth: 220,
-                    backgroundColor: AppColors.homeSurface,
-                    selectedIndex: widget.selectedIndex,
-                    onDestinationSelected: widget.onDestinationSelected,
-                    destinations: [
-                      for (final destination in widget.destinations)
-                        NavigationRailDestination(
-                          icon: destination.icon,
-                          selectedIcon: destination.selectedIcon,
-                          label: Text(destination.label),
-                        ),
-                    ],
-                    trailing: widget.onLogout == null
-                        ? null
-                        : Expanded(
-                            child: Align(
-                              alignment: Alignment.bottomCenter,
-                              child: Padding(
-                                padding: const EdgeInsets.only(bottom: 16),
-                                child: _railExpanded
-                                    ? InkWell(
-                                        onTap: widget.onLogout,
-                                        borderRadius: BorderRadius.circular(8),
-                                        child: const Padding(
-                                          padding: EdgeInsets.symmetric(
-                                            horizontal: 24,
-                                            vertical: 12,
-                                          ),
-                                          child: Row(
-                                            mainAxisSize: MainAxisSize.min,
-                                            children: [
-                                              Icon(Icons.logout),
-                                              SizedBox(width: 12),
-                                              Text('Sair'),
-                                            ],
-                                          ),
-                                        ),
-                                      )
-                                    : IconButton(
-                                        icon: const Icon(Icons.logout),
-                                        tooltip: 'Sair',
-                                        onPressed: widget.onLogout,
-                                      ),
-                              ),
-                            ),
-                          ),
+                  AnimatedContainer(
+                    duration: const Duration(milliseconds: 180),
+                    width: _railExpanded ? _expandedWidth : _collapsedWidth,
+                    color: AppColors.homeSurface,
+                    onEnd: () {
+                      if (_railExpanded) {
+                        setState(() => _menuContentExpanded = true);
+                      }
+                    },
+                    child: AppSideMenu(
+                      userName: widget.userName,
+                      destinations: widget.destinations,
+                      selectedIndex: widget.selectedIndex,
+                      expanded: _menuContentExpanded,
+                      onDestinationSelected: widget.onDestinationSelected,
+                      onLogout: widget.onLogout,
+                    ),
                   ),
                   const VerticalDivider(width: 1),
                   Expanded(child: widget.body),

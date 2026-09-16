@@ -15,7 +15,8 @@ Currently, the project includes:
 * Login by CPF + password (Firebase Authentication)
 * "Remember me" (saved credentials, restored on next launch)
 * Session-aware routing (auto-redirects to Login when signed out, and away from Login when already signed in)
-* Home screen with a responsive navigation shell (side rail on desktop/web, drawer on mobile)
+* Home dashboard: gradient welcome banner (greets the user by name, read from the `cpfIndex` Firestore doc), "Cotar e Contratar" quote categories, and empty-state cards for family members / contracted policies
+* Responsive, collapsible side menu (10 nav destinations, user avatar/name header) — a fixed sidebar on desktop/web, a drawer on mobile
 * Logout
 * Generic WebView screen (deep-link/refresh-safe via query parameters)
 
@@ -53,9 +54,9 @@ How each principle is applied in Insura's Feature-First + MVVM + Cubit architect
 
 * **S — Single Responsibility**: each layer has one job — `presentation/pages` only builds UI, `presentation/cubit` only manages state, `data/repositories` only decides how to fetch data and map failures, `data/datasources` only talks to one specific source (Firebase, secure storage, REST).
 * **O — Open/Closed**: `Result<Failure, S>` and the sealed `LoginState`/`HomeState` classes are closed for contract changes but open for extension via new subclasses — adding a `Failure` type or a `LoginState` variant doesn't require touching existing callers. New features can be added under `features/` without modifying existing ones — the exception is the composition points (`app_router.dart`, `home_nav_destinations.dart`), which, being where features are wired together, require a small, targeted change to register the new feature.
-* **L — Liskov Substitution**: any `AuthRemoteDataSource` implementation (`AuthRemoteDataSourceImpl`, backed by Firebase, or `AuthRemoteDataSourceFake`, used while there's no backend/for local dev) can substitute the abstraction without breaking `AuthRepository` or `LoginCubit`.
+* **L — Liskov Substitution**: any `AuthRemoteDataSource`/`AuthRepository` implementation can substitute the abstraction without breaking its consumers — tests take advantage of this by swapping the real `AuthRemoteDataSourceImpl` for hand-rolled fakes (`test/support/fakes.dart`) or Firebase test doubles (`firebase_auth_mocks`, `fake_cloud_firestore`), and `LoginCubit`/`HomeCubit` never notice the difference.
 * **I — Interface Segregation**: repositories/datasources are segregated per concern (`AuthRepository` for auth, `AuthCredentialsStorage` for "remember me" persistence), so a class only depends on the methods it actually uses instead of one monolithic repository.
-* **D — Dependency Inversion**: Cubits and repositories depend on abstractions (`abstract interface class`) injected via constructor through `get_it`, never on concrete implementations (`AuthRemoteDataSourceImpl`, `FirebaseAuth`) — this is what lets `AuthRemoteDataSourceFake` and Firebase test doubles (`firebase_auth_mocks`, `fake_cloud_firestore`) stand in for the real thing in dev/tests.
+* **D — Dependency Inversion**: Cubits and repositories depend on abstractions (`abstract interface class`) injected via constructor through `get_it`, never on concrete implementations (`AuthRemoteDataSourceImpl`, `FirebaseAuth`) — this is what lets hand-rolled fakes and Firebase test doubles (`firebase_auth_mocks`, `fake_cloud_firestore`) stand in for the real thing in tests.
 
 ### State management
 
@@ -94,9 +95,12 @@ lib/
 │   ├── theme/
 │   │   ├── app_theme.dart
 │   │   └── app_colors.dart
+│   ├── widgets/
+│   │   └── insura_logo.dart           # Shared brand mark (login header + side menu app bar)
 │   └── responsive/
 │       ├── breakpoints.dart
-│       └── responsive_scaffold.dart   # Shared nav shell: NavigationRail (desktop) / Drawer (mobile)
+│       ├── app_side_menu.dart         # Side menu content: user header (avatar/name) + nav items + logout
+│       └── responsive_scaffold.dart   # Shared nav shell: collapsible AppSideMenu sidebar (desktop) / Drawer (mobile)
 │
 └── features/                          # 📦 Modules organized by feature
     │
@@ -104,8 +108,7 @@ lib/
     │   ├── data/
     │   │   ├── datasources/
     │   │   │   ├── auth_remote_datasource.dart          # Interface
-    │   │   │   ├── auth_remote_datasource_impl.dart      # Firebase Auth + Firestore (CPF→e-mail index)
-    │   │   │   ├── auth_remote_datasource_fake.dart      # In-memory fake for dev without a backend
+    │   │   │   ├── auth_remote_datasource_impl.dart      # Firebase Auth + Firestore (CPF→e-mail/name index)
     │   │   │   ├── auth_credentials_storage.dart         # Interface ("remember me")
     │   │   │   └── auth_credentials_storage_impl.dart    # flutter_secure_storage impl
     │   │   ├── models/
@@ -117,7 +120,7 @@ lib/
     │   │   │   ├── user_entity.dart
     │   │   │   └── saved_credentials.dart
     │   │   └── repositories/
-    │   │       └── auth_repository.dart                  # Interface
+    │   │       └── auth_repository.dart                  # Interface (login, logout, currentUser, ...)
     │   └── presentation/
     │       ├── cubit/
     │       │   ├── login_cubit.dart
@@ -125,7 +128,7 @@ lib/
     │       ├── pages/
     │       │   └── login_page.dart
     │       └── widgets/
-    │           ├── login_header.dart, insura_logo.dart
+    │           ├── login_header.dart
     │           ├── login_card.dart, pill_text_field.dart, submit_button.dart
     │           ├── social_footer.dart, social_icon.dart
     │           └── cpf_input_formatter.dart
@@ -133,12 +136,15 @@ lib/
     ├── home/                          # 🏠 Dashboard / Home
     │   └── presentation/
     │       ├── cubit/
-    │       │   ├── home_cubit.dart                       # Nav selection + logout
+    │       │   ├── home_cubit.dart                       # userName (from AuthRepository.currentUser) + nav selection + logout
     │       │   └── home_state.dart
     │       ├── pages/
     │       │   └── home_page.dart
     │       └── widgets/
-    │           └── home_nav_destinations.dart             # Shared nav destinations source
+    │           ├── home_nav_destinations.dart             # Shared side menu destinations source
+    │           ├── home_welcome_banner.dart                # Gradient banner greeting the user
+    │           ├── home_quote_categories.dart              # "Cotar e Contratar" category grid
+    │           └── home_placeholder_card.dart              # Empty-state card (family / contracted policies)
     │
     └── webview/                       # 🌍 Generic WebView screen
         └── presentation/
@@ -172,7 +178,7 @@ This organization aims to favor **separation of concerns, low coupling, and ease
 | get_it | Dependency injection / service locator |
 | go_router | Declarative routing + auth redirect guard |
 | firebase_core / firebase_auth | Authentication |
-| cloud_firestore | CPF → e-mail lookup index for login |
+| cloud_firestore | CPF → e-mail/name lookup index for login |
 | flutter_secure_storage | "Remember me" credential persistence |
 | webview_flutter / webview_flutter_web | Generic in-app WebView |
 | MVVM | Architecture |
@@ -239,8 +245,6 @@ Run the app:
 flutter run
 ```
 
-> While there's no Firebase project connected, `useFakeAuth` in `lib/core/di/injector.dart` can be flipped to `true` to use an in-memory fake instead of real Firebase Auth/Firestore.
-
 ### Test credentials
 
 A test user is seeded in the Firebase project for trying out the login screen:
@@ -250,6 +254,8 @@ A test user is seeded in the Firebase project for trying out the login screen:
 | `123.456.789-09` | `insura1234` |
 
 > ⚠️ Test-only account for the study project's own Firebase project — not a real user, but avoid reusing this password anywhere real.
+
+The `cpfIndex/{cpf}` Firestore doc used to resolve the login e-mail can also carry an optional `name` field (`{ email, name }`); when present, it's used to greet the user by name on the Home welcome banner and side menu header.
 
 ### Dart/Flutter MCP (optional, for Claude Code)
 
@@ -269,8 +275,8 @@ claude mcp list
 
 Three layers of automated tests, mirroring the Feature-First structure:
 
-* **Unit tests** — `test/features/**/data/`, `test/features/**/presentation/cubit/`: repositories, credential storage, and Cubits (`LoginCubit`, `HomeCubit`), tested with hand-rolled fakes (`test/support/fakes.dart`) and `bloc_test` — no mocking framework, same spirit as this project's own `Result` type.
-* **Widget tests** — `test/features/**/presentation/{pages,widgets}/` and `test/widget_test.dart`: individual widgets (`SubmitButton`, `PillTextField`, `LoginCard`, `CpfInputFormatter`) plus the `LoginPage` flow (error snackbar, success navigation, "remember me" pre-fill), with `AuthRepository`/`LoginCubit` swapped for fakes via `get_it` so nothing touches real Firebase.
+* **Unit tests** — `test/features/**/data/`, `test/features/**/presentation/cubit/`: repositories, credential storage, and Cubits (`LoginCubit`, `HomeCubit`), tested with hand-rolled fakes (`test/support/fakes.dart`) and `bloc_test` — no mocking framework, same spirit as this project's own `Result` type. `AuthRemoteDataSourceImpl` itself (the Firestore `cpfIndex` lookup + Firebase Auth sign-in) is tested against `firebase_auth_mocks`/`fake_cloud_firestore` instead, since it talks to Firebase directly rather than through an injected fake.
+* **Widget tests** — `test/core/responsive/`, `test/features/**/presentation/{pages,widgets}/`, and `test/widget_test.dart`: shared shell widgets (`AppSideMenu`, `ResponsiveScaffold` at both mobile/desktop breakpoints), individual auth widgets (`SubmitButton`, `PillTextField`, `LoginCard`, `CpfInputFormatter`), and the `LoginPage`/`HomePage` flows (error snackbar, success navigation, "remember me" pre-fill, side menu selection, logout), with `AuthRepository`/`LoginCubit`/`HomeCubit` swapped for fakes via `get_it` so nothing touches real Firebase.
 * **Integration test** — `integration_test/app_test.dart`: boots the real `App()`, including the `go_router` auth redirect guard, and drives the full flow — blocked `/home` while logged out → login → Home → logout → blocked `/home` again.
 
 Run unit + widget tests:
@@ -286,9 +292,9 @@ flutter test integration_test/app_test.dart -d <device-id>
 # e.g. flutter test integration_test/app_test.dart -d "iPhone 17"
 ```
 
-Widget tests reach for `firebase_auth_mocks`/`fake_cloud_firestore` whenever a test needs `FirebaseAuth`/`FirebaseFirestore` from `get_it`, so they never touch real Firebase regardless of the `useFakeAuth` flag.
+Widget tests reach for `firebase_auth_mocks`/`fake_cloud_firestore` whenever a test needs `FirebaseAuth`/`FirebaseFirestore` from `get_it`, so they never touch real Firebase.
 
-> TODO: add test coverage for the `home`/`webview` presentation layers and set up a coverage report.
+> TODO: add test coverage for the `webview` presentation layer and set up a coverage report.
 
 ## 🔄 CI/CD
 
@@ -321,15 +327,17 @@ Some points that may be documented in the future:
 * [x] Login by CPF with Firebase Authentication
 * [x] "Remember me" credential persistence
 * [x] Session-aware route guard + logout
-* [x] Responsive navigation shell (side menu / drawer)
+* [x] Responsive, collapsible side menu (10 destinations, user avatar/name header) — sidebar on desktop/web, drawer on mobile
+* [x] Home dashboard redesign (welcome banner, quote categories, family/contracted placeholders)
 * [x] Generic WebView screen
-* [x] Unit tests (repositories, credential storage, cubits)
-* [x] Widget tests (auth widgets + `LoginPage` flow)
+* [x] Unit tests (repositories, credential storage, cubits, `AuthRemoteDataSourceImpl`)
+* [x] Widget tests (auth widgets, side menu/`ResponsiveScaffold`, `LoginPage`/`HomePage` flows)
 * [x] Integration test (login → Home → logout → route guard)
 * [ ] Registration flow (CPF-based sign-up)
+* [ ] Wire up the remaining side menu destinations (Minhas Contratações, Meus Sinistros, Minha Família, Meus Bens, Pagamentos, Coberturas, Validar Boleto, Telefones Importantes, Configurações)
 * [ ] Create requirements documentation
 * [ ] Define remaining API surface
-* [ ] Broader test coverage (`home`/`webview` layers) + coverage report
+* [ ] Broader test coverage (`webview` layer) + coverage report
 * [ ] Set up CI/CD
 * [ ] Document architectural decisions
 * [ ] Document AI usage

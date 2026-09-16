@@ -37,7 +37,7 @@ abstract final class AppRouter {
           final params = state.uri.queryParameters;
           return WebviewPage(
             args: WebviewPageArgs(
-              url: params['url'] ?? 'https://example.com',
+              url: params['url'] ?? 'https://ronipaschoal.com.br/#/insura',
               title: params['title'] ?? 'WebView',
             ),
           );

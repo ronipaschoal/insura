@@ -15,7 +15,7 @@ Currently, the project includes:
 * Login by CPF + password (Firebase Authentication)
 * "Remember me" (saved credentials, restored on next launch)
 * Session-aware routing (auto-redirects to Login when signed out, and away from Login when already signed in)
-* Home dashboard: gradient welcome banner (greets the user by name, read from the `cpfIndex` Firestore doc), "Cotar e Contratar" quote categories, and empty-state cards for family members / contracted policies
+* Home dashboard: gradient welcome banner (greets the user by name, read from the `cpfIndex` Firestore doc), "Cotar e Contratar" quote categories (each one opens the WebView, titled after the category), and empty-state cards for family members / contracted policies
 * Responsive, collapsible side menu (10 nav destinations, user avatar/name header) — a fixed sidebar on desktop/web, a drawer on mobile
 * Logout
 * Generic WebView screen (deep-link/refresh-safe via query parameters)
@@ -143,7 +143,7 @@ lib/
     │       └── widgets/
     │           ├── home_nav_destinations.dart             # Shared side menu destinations source
     │           ├── home_welcome_banner.dart                # Gradient banner greeting the user
-    │           ├── home_quote_categories.dart              # "Cotar e Contratar" category grid
+    │           ├── home_quote_categories.dart              # "Cotar e Contratar" category grid (opens the WebView)
     │           └── home_placeholder_card.dart              # Empty-state card (family / contracted policies)
     │
     └── webview/                       # 🌍 Generic WebView screen
@@ -276,7 +276,7 @@ claude mcp list
 Three layers of automated tests, mirroring the Feature-First structure:
 
 * **Unit tests** — `test/features/**/data/`, `test/features/**/presentation/cubit/`: repositories, credential storage, and Cubits (`LoginCubit`, `HomeCubit`), tested with hand-rolled fakes (`test/support/fakes.dart`) and `bloc_test` — no mocking framework, same spirit as this project's own `Result` type. `AuthRemoteDataSourceImpl` itself (the Firestore `cpfIndex` lookup + Firebase Auth sign-in) is tested against `firebase_auth_mocks`/`fake_cloud_firestore` instead, since it talks to Firebase directly rather than through an injected fake.
-* **Widget tests** — `test/core/responsive/`, `test/features/**/presentation/{pages,widgets}/`, and `test/widget_test.dart`: shared shell widgets (`AppSideMenu`, `ResponsiveScaffold` at both mobile/desktop breakpoints), individual auth widgets (`SubmitButton`, `PillTextField`, `LoginCard`, `CpfInputFormatter`), and the `LoginPage`/`HomePage` flows (error snackbar, success navigation, "remember me" pre-fill, side menu selection, logout), with `AuthRepository`/`LoginCubit`/`HomeCubit` swapped for fakes via `get_it` so nothing touches real Firebase.
+* **Widget tests** — `test/core/responsive/`, `test/features/**/presentation/{pages,widgets}/`, and `test/widget_test.dart`: shared shell widgets (`AppSideMenu`, `ResponsiveScaffold` at both mobile/desktop breakpoints), individual auth widgets (`SubmitButton`, `PillTextField`, `LoginCard`, `CpfInputFormatter`), and the `LoginPage`/`HomePage` flows (error snackbar, success navigation, "remember me" pre-fill, side menu selection, quote category → WebView navigation, logout), with `AuthRepository`/`LoginCubit`/`HomeCubit` swapped for fakes via `get_it` so nothing touches real Firebase.
 * **Integration test** — `integration_test/app_test.dart`: boots the real `App()`, including the `go_router` auth redirect guard, and drives the full flow — blocked `/home` while logged out → login → Home → logout → blocked `/home` again.
 
 Run unit + widget tests:
@@ -328,7 +328,7 @@ Some points that may be documented in the future:
 * [x] "Remember me" credential persistence
 * [x] Session-aware route guard + logout
 * [x] Responsive, collapsible side menu (10 destinations, user avatar/name header) — sidebar on desktop/web, drawer on mobile
-* [x] Home dashboard redesign (welcome banner, quote categories, family/contracted placeholders)
+* [x] Home dashboard redesign (welcome banner, quote categories that open the WebView, family/contracted placeholders)
 * [x] Generic WebView screen
 * [x] Unit tests (repositories, credential storage, cubits, `AuthRemoteDataSourceImpl`)
 * [x] Widget tests (auth widgets, side menu/`ResponsiveScaffold`, `LoginPage`/`HomePage` flows)

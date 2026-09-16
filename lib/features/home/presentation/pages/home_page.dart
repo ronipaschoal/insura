@@ -32,6 +32,18 @@ class HomePage extends StatelessWidget {
     }
   }
 
+  void _onQuoteCategoryTap(BuildContext context, HomeQuoteCategory category) {
+    // No dedicated quote flow per category yet, so all of them land on the
+    // same placeholder WebView (its URL default lives in app_router.dart);
+    // only the title changes to reflect which category was tapped.
+    context.push(
+      Uri(
+        path: AppRoutes.webview,
+        queryParameters: {'title': category.label},
+      ).toString(),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
@@ -65,7 +77,10 @@ class HomePage extends StatelessWidget {
                           style: _sectionTitleStyle,
                         ),
                         const SizedBox(height: 12),
-                        const HomeQuoteCategories(),
+                        HomeQuoteCategories(
+                          onCategoryTap: (category) =>
+                              _onQuoteCategoryTap(context, category),
+                        ),
                         const SizedBox(height: 28),
                         const Text('Minha Família', style: _sectionTitleStyle),
                         const SizedBox(height: 12),

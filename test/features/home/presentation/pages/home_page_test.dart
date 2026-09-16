@@ -41,6 +41,12 @@ void main() {
           path: AppRoutes.login,
           builder: (_, _) => const Scaffold(body: Text('LOGIN')),
         ),
+        GoRoute(
+          path: AppRoutes.webview,
+          builder: (_, state) => Scaffold(
+            body: Text('WEBVIEW:${state.uri.queryParameters['title']}'),
+          ),
+        ),
       ],
     );
     await tester.pumpWidget(MaterialApp.router(routerConfig: router));
@@ -82,6 +88,19 @@ void main() {
       await tester.pump();
 
       expect(find.text('Em breve!'), findsOneWidget);
+    },
+  );
+
+  testWidgets(
+    'tapping a "Cotar e Contratar" category opens the WebView with its '
+    'label as the title',
+    (tester) async {
+      await pumpHomePage(tester);
+
+      await tester.tap(find.text('Automóvel'));
+      await tester.pumpAndSettle();
+
+      expect(find.text('WEBVIEW:Automóvel'), findsOneWidget);
     },
   );
 

@@ -32,9 +32,6 @@ jobs:
       - name: Start Web Release Build
         run: flutter build web --release
 
-      - name: Copy .htaccess (flutter build web doesn't copy dotfiles)
-        run: cp web/.htaccess build/web/.htaccess
-
       - name: Upload Web Build Files
         uses: actions/upload-artifact@v4
         with:
@@ -59,4 +56,4 @@ jobs:
           server: ${{ secrets.FTP_SERVER }}
           username: ${{ secrets.FTP_USERNAME }}
           password: ${{ secrets.FTP_PASSWORD }}
-          server-dir: ./insura/
+          server-dir: ./

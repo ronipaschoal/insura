@@ -71,13 +71,15 @@ This choice separates state from the presentation layer, keeping widgets focused
 
 Navigation uses **go_router** (`MaterialApp.router`), configured in `lib/app/routes/app_router.dart`. A `redirect` callback backed by `AuthRepository.isLoggedIn`/`authStateChanges` guards every route: unauthenticated users are sent back to `/login`, and authenticated users are kept out of `/login`. Screens needing dynamic data (like `/webview`) read it from query parameters rather than route `extra`, so URLs stay deep-link/refresh-safe on web.
 
+Web URLs are hash-based (`/#/home`) on purpose: the deployed host has no server-side rewrite rule to fall back to `index.html` on a direct/refreshed visit to a deep link, which is what path-based URLs (Flutter's `usePathUrlStrategy()`) require to avoid 404s.
+
 ## 📂 Project structure
 
 The project uses a **Feature-First** organization, separating the app's functionality into independent modules.
 
 ```text
 lib/
-├── main.dart                          # 🎬 usePathUrlStrategy() + Firebase.initializeApp() + setupInjector()
+├── main.dart                          # 🎬 Firebase.initializeApp() + setupInjector()
 │
 ├── app/
 │   ├── app.dart                       # MaterialApp.router + theme

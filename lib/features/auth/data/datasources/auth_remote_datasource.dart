@@ -13,4 +13,8 @@ abstract interface class AuthRemoteDataSource {
   Stream<bool> get authStateChanges;
 
   bool get isLoggedIn;
+
+  /// The signed-in user, read from the current session (not a login
+  /// response) — used to greet the user on Home without a fresh sign-in.
+  LoginResponseModel? get currentUser;
 }

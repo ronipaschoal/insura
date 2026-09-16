@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import 'insura_logo.dart';
+import '../../../../core/widgets/insura_logo.dart';
 
 class LoginHeader extends StatelessWidget {
   const LoginHeader({super.key});

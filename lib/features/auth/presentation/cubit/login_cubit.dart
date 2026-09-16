@@ -30,21 +30,15 @@ class LoginCubit extends Cubit<LoginState> {
   }) async {
     emit(const LoginLoading());
 
-    final result = await _authRepository.login(
-      cpf: cpf,
-      password: password,
-    );
+    final result = await _authRepository.login(cpf: cpf, password: password);
 
-    result.fold(
-      (failure) => emit(LoginError(failure.message)),
-      (user) {
-        unawaited(
-          rememberMe
-              ? _credentialsStorage.save(cpf: cpf, password: password)
-              : _credentialsStorage.clear(),
-        );
-        emit(LoginSuccess(user));
-      },
-    );
+    result.fold((failure) => emit(LoginError(failure.message)), (user) {
+      unawaited(
+        rememberMe
+            ? _credentialsStorage.save(cpf: cpf, password: password)
+            : _credentialsStorage.clear(),
+      );
+      emit(LoginSuccess(user));
+    });
   }
 }

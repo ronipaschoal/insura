@@ -16,6 +16,8 @@ class FakeAuthRepository implements AuthRepository {
   bool loggedIn = false;
   int logoutCalls = 0;
   ({String cpf, String password})? lastLoginArgs;
+  @override
+  UserEntity? currentUser;
 
   final _authStateController = StreamController<bool>.broadcast();
 
@@ -51,6 +53,8 @@ class FakeAuthRemoteDataSource implements AuthRemoteDataSource {
   Object? loginError;
   bool loggedIn = false;
   int logoutCalls = 0;
+  @override
+  LoginResponseModel? currentUser;
 
   final _authStateController = StreamController<bool>.broadcast();
 

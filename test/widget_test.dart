@@ -11,9 +11,9 @@ import 'package:insura/core/di/injector.dart';
 void main() {
   setUp(() {
     setupInjector();
-    // `useFakeAuth` may be `false` (real Firebase Auth/Firestore), which
-    // needs `Firebase.initializeApp()` — unavailable under `flutter test`.
-    // Swap in in-memory fakes so widget tests never touch real Firebase.
+    // The real AuthRemoteDataSourceImpl needs `Firebase.initializeApp()`,
+    // which is unavailable under `flutter test`. Swap in in-memory fakes so
+    // widget tests never touch real Firebase.
     getIt
       ..unregister<FirebaseAuth>()
       ..registerLazySingleton<FirebaseAuth>(MockFirebaseAuth.new)

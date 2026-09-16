@@ -47,8 +47,11 @@ void main() {
     'true',
     setUp: () => authRepository.loginResult = const ResultSuccess(user),
     build: () => LoginCubit(authRepository, credentialsStorage),
-    act: (cubit) =>
-        cubit.login(cpf: '12345678909', password: 'insura1234', rememberMe: true),
+    act: (cubit) => cubit.login(
+      cpf: '12345678909',
+      password: 'insura1234',
+      rememberMe: true,
+    ),
     expect: () => [isA<LoginLoading>(), isA<LoginSuccess>()],
     verify: (_) {
       expect(credentialsStorage.saveCalls, 1);
@@ -77,8 +80,9 @@ void main() {
 
   blocTest<LoginCubit, LoginState>(
     'emits Loading then Error on failure and never touches storage',
-    setUp: () => authRepository.loginResult =
-        const ResultFailure(AuthFailure('CPF ou senha inválidos.')),
+    setUp: () => authRepository.loginResult = const ResultFailure(
+      AuthFailure('CPF ou senha inválidos.'),
+    ),
     build: () => LoginCubit(authRepository, credentialsStorage),
     act: (cubit) =>
         cubit.login(cpf: '12345678909', password: 'wrong', rememberMe: true),

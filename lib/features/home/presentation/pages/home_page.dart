@@ -8,6 +8,15 @@ import '../../../../core/responsive/responsive_scaffold.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
 import '../widgets/home_nav_destinations.dart';
+import '../widgets/home_placeholder_card.dart';
+import '../widgets/home_quote_categories.dart';
+import '../widgets/home_welcome_banner.dart';
+
+const _sectionTitleStyle = TextStyle(
+  color: Colors.white,
+  fontSize: 18,
+  fontWeight: FontWeight.bold,
+);
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -36,13 +45,49 @@ class HomePage extends StatelessWidget {
         },
         builder: (context, state) {
           return ResponsiveScaffold(
-            title: 'Home',
             destinations: homeNavDestinations,
             selectedIndex: state.selectedIndex,
             onDestinationSelected: (index) =>
                 _onDestinationSelected(context, index),
             onLogout: () => context.read<HomeCubit>().logout(),
-            body: const Center(child: Text('Bem-vindo(a)!')),
+            body: SingleChildScrollView(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  HomeWelcomeBanner(userName: state.userName),
+                  Padding(
+                    padding: const EdgeInsets.all(20),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text(
+                          'Cotar e Contratar',
+                          style: _sectionTitleStyle,
+                        ),
+                        const SizedBox(height: 12),
+                        const HomeQuoteCategories(),
+                        const SizedBox(height: 28),
+                        const Text('Minha Família', style: _sectionTitleStyle),
+                        const SizedBox(height: 12),
+                        const HomePlaceholderCard(
+                          icon: Icons.add_circle_outline,
+                          message:
+                              'Adicione aqui membros da sua família e '
+                              'compartilhe os seguros com eles.',
+                        ),
+                        const SizedBox(height: 28),
+                        const Text('Contratados', style: _sectionTitleStyle),
+                        const SizedBox(height: 12),
+                        const HomePlaceholderCard(
+                          icon: Icons.sentiment_dissatisfied_outlined,
+                          message: 'Você ainda não possui seguros contratados.',
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
           );
         },
       ),

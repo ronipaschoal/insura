@@ -8,7 +8,9 @@ void main() {
   late AuthCredentialsStorageImpl storage;
 
   setUp(() {
-    FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform({});
+    FlutterSecureStoragePlatform.instance = TestFlutterSecureStoragePlatform(
+      {},
+    );
     storage = AuthCredentialsStorageImpl(const FlutterSecureStorage());
   });
 

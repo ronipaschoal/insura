@@ -10,4 +10,11 @@ abstract final class AppColors {
   static const Color loginCardBackground = Color(0xFF272837);
   static const Color loginAccent = Color(0xFF2FBFA0);
   static const Color loginFieldBorder = Color(0x40FFFFFF);
+
+  // Home screen branding: dark background/cards; welcome banner reuses the
+  // login gradient for a consistent brand look across screens.
+  static const Color homeBackground = Color(0xFF16171F);
+  static const Color homeSurface = Color(0xFF20212C);
+  static const Color homeCategoryTile = Color(0xFF262835);
+  static const Color homeNotificationBadge = Color(0xFFE94F8A);
 }

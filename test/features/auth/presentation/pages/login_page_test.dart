@@ -106,7 +106,9 @@ void main() {
     await pumpLoginPage(tester);
     await tester.pumpAndSettle();
 
-    final fields = tester.widgetList<TextField>(find.byType(TextField)).toList();
+    final fields = tester
+        .widgetList<TextField>(find.byType(TextField))
+        .toList();
     expect(fields[0].controller?.text, '123.456.789-09');
     expect(fields[1].controller?.text, 'insura1234');
   });

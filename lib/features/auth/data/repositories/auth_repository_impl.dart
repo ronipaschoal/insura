@@ -17,10 +17,7 @@ class AuthRepositoryImpl implements AuthRepository {
     required String password,
   }) async {
     try {
-      final model = await _remoteDataSource.login(
-        cpf: cpf,
-        password: password,
-      );
+      final model = await _remoteDataSource.login(cpf: cpf, password: password);
       return ResultSuccess(model.toEntity());
     } on FirebaseAuthException catch (error) {
       return ResultFailure(AuthFailure(_messageFor(error.code)));
@@ -37,6 +34,9 @@ class AuthRepositoryImpl implements AuthRepository {
 
   @override
   bool get isLoggedIn => _remoteDataSource.isLoggedIn;
+
+  @override
+  UserEntity? get currentUser => _remoteDataSource.currentUser?.toEntity();
 
   String _messageFor(String code) {
     switch (code) {

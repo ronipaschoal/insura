@@ -48,7 +48,10 @@ void main() {
   ) async {
     bool? newValue;
     await tester.pumpWidget(
-      buildCard(rememberMe: true, onRememberMeChanged: (value) => newValue = value),
+      buildCard(
+        rememberMe: true,
+        onRememberMeChanged: (value) => newValue = value,
+      ),
     );
 
     await tester.tap(find.byType(Checkbox));

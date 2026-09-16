@@ -38,13 +38,10 @@ void main() {
 
       final result = await repository.login(cpf: '123', password: 'x');
 
-      result.fold(
-        (failure) {
-          expect(failure, isA<AuthFailure>());
-          expect(failure.message, 'CPF não cadastrado.');
-        },
-        (_) => fail('expected failure'),
-      );
+      result.fold((failure) {
+        expect(failure, isA<AuthFailure>());
+        expect(failure.message, 'CPF não cadastrado.');
+      }, (_) => fail('expected failure'));
     });
 
     for (final code in ['wrong-password', 'invalid-credential']) {
@@ -67,8 +64,10 @@ void main() {
       final result = await repository.login(cpf: '123', password: 'x');
 
       result.fold(
-        (failure) =>
-            expect(failure.message, 'Não foi possível entrar. Tente novamente.'),
+        (failure) => expect(
+          failure.message,
+          'Não foi possível entrar. Tente novamente.',
+        ),
         (_) => fail('expected failure'),
       );
     });

@@ -15,4 +15,8 @@ abstract interface class AuthRepository {
   Stream<bool> get authStateChanges;
 
   bool get isLoggedIn;
+
+  /// The signed-in user, read from the current session — used to greet the
+  /// user on Home without a fresh sign-in.
+  UserEntity? get currentUser;
 }

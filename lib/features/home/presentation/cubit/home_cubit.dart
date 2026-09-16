@@ -6,7 +6,8 @@ import 'home_state.dart';
 /// ViewModel for [HomePage]: tracks which nav destination (drawer/side menu)
 /// is selected and handles logging out.
 class HomeCubit extends Cubit<HomeState> {
-  HomeCubit(this._authRepository) : super(const HomeState());
+  HomeCubit(this._authRepository)
+    : super(HomeState(userName: _authRepository.currentUser?.name ?? ''));
 
   final AuthRepository _authRepository;
 

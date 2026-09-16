@@ -3,6 +3,7 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/routes/app_routes.dart';
+import '../../../../core/di/injector.dart';
 import '../../../../core/responsive/responsive_scaffold.dart';
 import '../cubit/home_cubit.dart';
 import '../cubit/home_state.dart';
@@ -26,8 +27,13 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return BlocProvider(
-      create: (_) => HomeCubit(),
-      child: BlocBuilder<HomeCubit, HomeState>(
+      create: (_) => getIt<HomeCubit>(),
+      child: BlocConsumer<HomeCubit, HomeState>(
+        listener: (context, state) {
+          if (state.loggedOut) {
+            context.go(AppRoutes.login);
+          }
+        },
         builder: (context, state) {
           return ResponsiveScaffold(
             title: 'Home',
@@ -35,6 +41,7 @@ class HomePage extends StatelessWidget {
             selectedIndex: state.selectedIndex,
             onDestinationSelected: (index) =>
                 _onDestinationSelected(context, index),
+            onLogout: () => context.read<HomeCubit>().logout(),
             body: const Center(child: Text('Bem-vindo(a)!')),
           );
         },

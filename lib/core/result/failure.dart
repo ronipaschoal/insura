@@ -4,14 +4,10 @@ sealed class Failure {
   final String message;
 }
 
-final class NetworkFailure extends Failure {
-  const NetworkFailure([super.message = 'Falha de conexão']);
-}
-
-final class ServerFailure extends Failure {
-  const ServerFailure([super.message = 'Erro no servidor']);
-}
-
 final class UnknownFailure extends Failure {
   const UnknownFailure([super.message = 'Erro desconhecido']);
+}
+
+final class AuthFailure extends Failure {
+  const AuthFailure([super.message = 'Falha de autenticação']);
 }

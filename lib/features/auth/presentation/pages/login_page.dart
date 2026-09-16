@@ -4,8 +4,13 @@ import 'package:go_router/go_router.dart';
 
 import '../../../../app/routes/app_routes.dart';
 import '../../../../core/di/injector.dart';
+import '../../../../core/theme/app_colors.dart';
 import '../cubit/login_cubit.dart';
 import '../cubit/login_state.dart';
+import '../widgets/cpf_input_formatter.dart';
+import '../widgets/login_card.dart';
+import '../widgets/login_header.dart';
+import '../widgets/social_footer.dart';
 
 class LoginPage extends StatefulWidget {
   const LoginPage({super.key});
@@ -15,12 +20,13 @@ class LoginPage extends StatefulWidget {
 }
 
 class _LoginPageState extends State<LoginPage> {
-  final _emailController = TextEditingController();
+  final _cpfController = TextEditingController();
   final _passwordController = TextEditingController();
+  bool _rememberMe = true;
 
   @override
   void dispose() {
-    _emailController.dispose();
+    _cpfController.dispose();
     _passwordController.dispose();
     super.dispose();
   }
@@ -30,71 +36,90 @@ class _LoginPageState extends State<LoginPage> {
     return BlocProvider(
       create: (_) => getIt<LoginCubit>(),
       child: Scaffold(
-        body: SafeArea(
-          child: Center(
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 400),
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: BlocConsumer<LoginCubit, LoginState>(
-                  listener: (context, state) {
-                    if (state is LoginSuccess) {
-                      context.go(AppRoutes.home);
-                    }
-                    if (state is LoginError) {
-                      ScaffoldMessenger.of(
-                        context,
-                      ).showSnackBar(SnackBar(content: Text(state.message)));
-                    }
-                  },
-                  builder: (context, state) {
-                    final isLoading = state is LoginLoading;
-                    return Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'Insura',
-                          style: Theme.of(context).textTheme.headlineMedium,
-                        ),
-                        const SizedBox(height: 32),
-                        TextField(
-                          controller: _emailController,
-                          keyboardType: TextInputType.emailAddress,
-                          decoration: const InputDecoration(
-                            labelText: 'E-mail',
-                          ),
-                        ),
-                        const SizedBox(height: 16),
-                        TextField(
-                          controller: _passwordController,
-                          obscureText: true,
-                          decoration: const InputDecoration(labelText: 'Senha'),
-                        ),
-                        const SizedBox(height: 24),
-                        FilledButton(
-                          onPressed: isLoading
-                              ? null
-                              : () => context.read<LoginCubit>().login(
-                                  email: _emailController.text,
-                                  password: _passwordController.text,
-                                ),
-                          child: isLoading
-                              ? const SizedBox(
-                                  width: 20,
-                                  height: 20,
-                                  child: CircularProgressIndicator(
-                                    strokeWidth: 2,
-                                  ),
-                                )
-                              : const Text('Entrar'),
-                        ),
-                      ],
-                    );
-                  },
+        backgroundColor: AppColors.loginBackgroundDark,
+        body: Stack(
+          children: [
+            Positioned(
+              top: 0,
+              left: 0,
+              right: 0,
+              height: MediaQuery.sizeOf(context).height * 0.42,
+              child: const DecoratedBox(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      AppColors.loginGradientStart,
+                      AppColors.loginGradientEnd,
+                    ],
+                  ),
                 ),
               ),
             ),
-          ),
+            SafeArea(
+              child: SingleChildScrollView(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 32,
+                ),
+                child: Column(
+                  children: [
+                    const LoginHeader(),
+                    const SizedBox(height: 32),
+                    ConstrainedBox(
+                      constraints: const BoxConstraints(maxWidth: 400),
+                      child: BlocConsumer<LoginCubit, LoginState>(
+                        listener: (context, state) {
+                          if (state is LoginSuccess) {
+                            context.go(AppRoutes.home);
+                          }
+                          if (state is LoginError) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                              SnackBar(content: Text(state.message)),
+                            );
+                          }
+                          if (state is LoginCredentialsLoaded) {
+                            _cpfController.text = CpfInputFormatter()
+                                .formatEditUpdate(
+                                  TextEditingValue.empty,
+                                  TextEditingValue(text: state.cpf),
+                                )
+                                .text;
+                            _passwordController.text = state.password;
+                            setState(() => _rememberMe = true);
+                          }
+                        },
+                        builder: (context, state) {
+                          final isLoading = state is LoginLoading;
+                          return LoginCard(
+                            cpfController: _cpfController,
+                            passwordController: _passwordController,
+                            rememberMe: _rememberMe,
+                            onRememberMeChanged: (value) =>
+                                setState(() => _rememberMe = value ?? true),
+                            isLoading: isLoading,
+                            onSubmit: isLoading
+                                ? null
+                                : () => context.read<LoginCubit>().login(
+                                    cpf: _cpfController.text.replaceAll(
+                                      RegExp(r'\D'),
+                                      '',
+                                    ),
+                                    password: _passwordController.text,
+                                    rememberMe: _rememberMe,
+                                  ),
+                          );
+                        },
+                      ),
+                    ),
+                    const SizedBox(height: 40),
+                    const SocialFooter(),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
       ),
     );

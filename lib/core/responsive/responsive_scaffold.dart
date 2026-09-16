@@ -13,6 +13,7 @@ class ResponsiveScaffold extends StatelessWidget {
     required this.destinations,
     this.selectedIndex = 0,
     this.onDestinationSelected,
+    this.onLogout,
   });
 
   final String title;
@@ -20,14 +21,16 @@ class ResponsiveScaffold extends StatelessWidget {
   final List<NavigationDestination> destinations;
   final int selectedIndex;
   final ValueChanged<int>? onDestinationSelected;
+  final VoidCallback? onLogout;
 
   @override
   Widget build(BuildContext context) {
     final isDesktop = MediaQuery.sizeOf(context).width >= Breakpoints.desktop;
+    final appBar = AppBar(title: Text(title));
 
     if (isDesktop) {
       return Scaffold(
-        appBar: AppBar(title: Text(title)),
+        appBar: appBar,
         body: Row(
           children: [
             NavigationRail(
@@ -42,6 +45,34 @@ class ResponsiveScaffold extends StatelessWidget {
                     label: Text(destination.label),
                   ),
               ],
+              trailing: onLogout == null
+                  ? null
+                  : Expanded(
+                      child: Align(
+                        alignment: Alignment.bottomCenter,
+                        child: Padding(
+                          padding: const EdgeInsets.only(bottom: 16),
+                          child: InkWell(
+                            onTap: onLogout,
+                            borderRadius: BorderRadius.circular(8),
+                            child: const Padding(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: 24,
+                                vertical: 12,
+                              ),
+                              child: Row(
+                                mainAxisSize: MainAxisSize.min,
+                                children: [
+                                  Icon(Icons.logout),
+                                  SizedBox(width: 12),
+                                  Text('Sair'),
+                                ],
+                              ),
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
             ),
             const VerticalDivider(width: 1),
             Expanded(child: body),
@@ -51,7 +82,7 @@ class ResponsiveScaffold extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: appBar,
       drawer: NavigationDrawer(
         selectedIndex: selectedIndex,
         onDestinationSelected: (index) {
@@ -65,6 +96,17 @@ class ResponsiveScaffold extends StatelessWidget {
               selectedIcon: destination.selectedIcon,
               label: Text(destination.label),
             ),
+          if (onLogout != null) ...[
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout),
+              title: const Text('Sair'),
+              onTap: () {
+                Navigator.of(context).pop();
+                onLogout!();
+              },
+            ),
+          ],
         ],
       ),
       body: body,

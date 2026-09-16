@@ -6,7 +6,13 @@ import '../entities/user_entity.dart';
 /// (not the implementation) lets [LoginCubit] be built/tested against a fake.
 abstract interface class AuthRepository {
   Future<Result<Failure, UserEntity>> login({
-    required String email,
+    required String cpf,
     required String password,
   });
+
+  Future<void> logout();
+
+  Stream<bool> get authStateChanges;
+
+  bool get isLoggedIn;
 }

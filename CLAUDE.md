@@ -4,7 +4,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project state
 
-`insura` has a skeleton in place implementing the architecture below: a login screen, a home screen with responsive navigation (side menu on desktop/web, drawer on mobile), and a webview screen. Screens are functional as a shell (no real backend wired up — `ApiEndpoints.baseUrl` is a placeholder) but not yet fleshed out with real features.
+`insura` has a skeleton in place implementing the architecture below: a login screen (CPF + password via Firebase Authentication, with a Firestore `cpfIndex` lookup, "remember me", and a `go_router` auth redirect guard), a home screen with responsive navigation (side menu on desktop/web, drawer on mobile) and logout, and a webview screen. There is no REST backend — only Firebase (Auth + Firestore) is wired up so far.
 
 This project is **mobile-first, with a web version**. Design and implement UI/UX for mobile screen sizes first, then adapt layouts for web/larger screens.
 
@@ -29,7 +29,6 @@ This project is **mobile-first, with a web version**. Design and implement UI/UX
 - **MVVM**: each screen/feature separates View (widgets in `presentation/pages` and `presentation/widgets`) from ViewModel (`presentation/cubit`), with the ViewModel exposing state to the View and containing no Flutter UI code.
 - **State management**: `flutter_bloc`, using **Cubit** (not full Bloc event classes) as the ViewModel layer.
 - **Dependency injection**: `get_it` as the service locator for repositories, data sources, and cubits, registered in `lib/core/di/injector.dart` against interfaces, not implementations.
-- **HTTP client**: `HttpClient` (`lib/core/network/http_client.dart`) is the interface data sources depend on (`get`/`post`/`put`/`delete`, returning a transport-agnostic `HttpResponse<T>`); `DioClient` is its only implementation, wrapping `dio`. Data sources must never depend on `Dio`/`DioClient` directly — `get_it` injects `HttpClient`.
 - **Result handling**: repository methods return `Result<Failure, S>` (`lib/core/result/result.dart`) instead of throwing — a hand-rolled `Either`-style sealed class with `ResultSuccess`/`ResultFailure` and a `fold` method. Do not add a functional-programming package (`dartz`/`fpdart`/etc.) for this — it's intentionally implemented in-project.
 - **SOLID**: repositories and data sources are defined as `abstract interface class` in `domain/repositories` (or `data/datasources`), always in their own file, with the implementation in a sibling `..._impl.dart` file (e.g. `auth_repository.dart`/`auth_repository_impl.dart`, `auth_remote_datasource.dart`/`auth_remote_datasource_impl.dart`) — never combine interface and implementation in one file. `get_it` injects the interface, never the concrete class.
 - **Routing**: `go_router` via `MaterialApp.router`, configured in `lib/app/routes/app_router.dart` (one `GoRoute` per screen); route path constants live in `app_routes.dart`. `main.dart` calls `usePathUrlStrategy()` (from `flutter_web_plugins`) so web URLs are path-based (`/home`) instead of hash-based (`/#/home`). Navigate with `context.go`/`context.push`, not `Navigator`. Screens needing dynamic data (e.g. `/webview`) read it from query parameters (`state.uri.queryParameters`) rather than route `arguments`/`extra`, so the URL is deep-link/refresh-safe — build target URLs with `Uri(path: ..., queryParameters: {...}).toString()`.
@@ -50,7 +49,6 @@ lib/
 │       └── app_routes.dart      # route path constants
 ├── core/
 │   ├── di/injector.dart         # get_it setup (setupInjector/resetInjector)
-│   ├── network/                 # http_client.dart (interface), dio_client.dart, api_endpoints.dart
 │   ├── result/                  # result.dart (Either-style), failure.dart
 │   ├── theme/                   # app_theme.dart, app_colors.dart
 │   └── responsive/              # breakpoints.dart, responsive_scaffold.dart

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "1088730968345",
+    "project_id": "insura-seguros",
+    "storage_bucket": "insura-seguros.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1088730968345:android:5dae981d4afde8420fd588",
+        "android_client_info": {
+          "package_name": "com.example.insura"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB19Unj3ybdiSsXXXXi_CCSeXsucjqBu1c"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

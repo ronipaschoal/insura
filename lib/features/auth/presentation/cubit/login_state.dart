@@ -23,3 +23,12 @@ final class LoginError extends LoginState {
 
   final String message;
 }
+
+/// Emitted once, on cubit creation, when a CPF/password pair was previously
+/// saved via "Lembrar Sempre" — [LoginPage] uses it to pre-fill the form.
+final class LoginCredentialsLoaded extends LoginState {
+  const LoginCredentialsLoaded({required this.cpf, required this.password});
+
+  final String cpf;
+  final String password;
+}

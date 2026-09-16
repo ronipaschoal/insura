@@ -1,0 +1,13 @@
+# Serve index.html for any path that isn't a real file/directory, so
+# Flutter's path-based URL strategy (usePathUrlStrategy()) can handle
+# deep links like /login or /home directly, instead of 404ing.
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /
+
+  RewriteCond %{REQUEST_FILENAME} -f [OR]
+  RewriteCond %{REQUEST_FILENAME} -d
+  RewriteRule ^ - [L]
+
+  RewriteRule ^ index.html [L]
+</IfModule>

@@ -44,7 +44,7 @@ New features and improvements will be added as the study evolves.
 
 ## 🏗️ Architecture
 
-📐 <a href="docs/architecture-blueprint.html" target="_blank">Architecture blueprint</a> — runtime dependency graph, `get_it` registration order, external packages and directory tree, traced from the actual code.
+📐 <a href="https://ronipaschoal.github.io/insura/architecture-blueprint.html" target="_blank">Architecture blueprint</a> — runtime dependency graph, `get_it` registration order, external packages and directory tree, traced from the actual code.
 
 The project uses **MVVM (Model-View-ViewModel)** as its architectural reference, separating **View** (widgets in `presentation/pages` and `presentation/widgets`) from **ViewModel** (`presentation/cubit`), with the ViewModel exposing state to the View and containing no Flutter UI code.
 

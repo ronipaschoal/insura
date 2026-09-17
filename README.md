@@ -44,6 +44,8 @@ New features and improvements will be added as the study evolves.
 
 ## 🏗️ Architecture
 
+📐 <a href="docs/architecture-blueprint.html" target="_blank">Architecture blueprint</a> — runtime dependency graph, `get_it` registration order, external packages and directory tree, traced from the actual code.
+
 The project uses **MVVM (Model-View-ViewModel)** as its architectural reference, separating **View** (widgets in `presentation/pages` and `presentation/widgets`) from **ViewModel** (`presentation/cubit`), with the ViewModel exposing state to the View and containing no Flutter UI code.
 
 **SOLID** principles are also applied, mainly to keep the data layer organized, decoupled, and easier to evolve and test.
@@ -69,7 +71,7 @@ This choice separates state from the presentation layer, keeping widgets focused
 
 ### Routing
 
-Navigation uses **go_router** (`MaterialApp.router`), configured in `lib/app/routes/app_router.dart`. A `redirect` callback backed by `AuthRepository.isLoggedIn`/`authStateChanges` guards every route: unauthenticated users are sent back to `/login`, and authenticated users are kept out of `/login`. Screens needing dynamic data (like `/webview`) read it from query parameters rather than route `extra`, so URLs stay deep-link/refresh-safe on web.
+Navigation uses **go_router** (`MaterialApp.router`), configured in `lib/app/routes/app_router.dart`. A `redirect` callback guards every route, backed by an app-wide `AuthCubit` (`getIt<AuthCubit>()`) rather than `AuthRepository` directly — the router resolves it from `get_it` the same way a page resolves its own Cubit: unauthenticated users are sent back to `/login`, and authenticated users are kept out of `/login`. Screens needing dynamic data (like `/webview`) read it from query parameters rather than route `extra`, so URLs stay deep-link/refresh-safe on web.
 
 Web URLs are hash-based (`/#/home`) on purpose: the deployed host has no server-side rewrite rule to fall back to `index.html` on a direct/refreshed visit to a deep link, which is what path-based URLs (Flutter's `usePathUrlStrategy()`) require to avoid 404s.
 
@@ -86,7 +88,7 @@ lib/
 │   └── routes/
 │       ├── app_router.dart            # GoRouter config: routes + auth redirect guard
 │       ├── app_routes.dart            # Route path constants
-│       └── go_router_refresh_stream.dart  # Bridges AuthRepository.authStateChanges into go_router
+│       └── go_router_refresh_stream.dart  # Bridges AuthCubit.stream into go_router
 │
 ├── core/                              # 🌐 Global, shared layer
 │   ├── di/
@@ -126,7 +128,9 @@ lib/
     │   └── presentation/
     │       ├── cubit/
     │       │   ├── login_cubit.dart
-    │       │   └── login_state.dart
+    │       │   ├── login_state.dart
+    │       │   ├── auth_cubit.dart                        # App-wide session state — read by AppRouter's redirect guard
+    │       │   └── auth_state.dart
     │       ├── pages/
     │       │   └── login_page.dart
     │       └── widgets/
@@ -277,7 +281,7 @@ claude mcp list
 
 Three layers of automated tests, mirroring the Feature-First structure:
 
-* **Unit tests** — `test/features/**/data/`, `test/features/**/presentation/cubit/`: repositories, credential storage, and Cubits (`LoginCubit`, `HomeCubit`), tested with hand-rolled fakes (`test/support/fakes.dart`) and `bloc_test` — no mocking framework, same spirit as this project's own `Result` type. `AuthRemoteDataSourceImpl` itself (the Firestore `cpfIndex` lookup + Firebase Auth sign-in) is tested against `firebase_auth_mocks`/`fake_cloud_firestore` instead, since it talks to Firebase directly rather than through an injected fake.
+* **Unit tests** — `test/features/**/data/`, `test/features/**/presentation/cubit/`, `test/core/di/`: repositories, credential storage, and Cubits (`LoginCubit`, `HomeCubit`, `AuthCubit`), tested with hand-rolled fakes (`test/support/fakes.dart`) and `bloc_test` — no mocking framework, same spirit as this project's own `Result` type. `AuthRemoteDataSourceImpl` itself (the Firestore `cpfIndex` lookup + Firebase Auth sign-in) is tested against `firebase_auth_mocks`/`fake_cloud_firestore` instead, since it talks to Firebase directly rather than through an injected fake. `test/core/di/injector_test.dart` is a smoke test that every cubit `setupInjector()` registers actually resolves from `get_it`.
 * **Widget tests** — `test/core/responsive/`, `test/features/**/presentation/{pages,widgets}/`, and `test/widget_test.dart`: shared shell widgets (`AppSideMenu`, `ResponsiveScaffold` at both mobile/desktop breakpoints), individual auth widgets (`SubmitButton`, `PillTextField`, `LoginCard`, `CpfInputFormatter`), and the `LoginPage`/`HomePage` flows (error snackbar, success navigation, "remember me" pre-fill, side menu selection, quote category → WebView navigation, logout), with `AuthRepository`/`LoginCubit`/`HomeCubit` swapped for fakes via `get_it` so nothing touches real Firebase.
 * **Integration test** — `integration_test/app_test.dart`: boots the real `App()`, including the `go_router` auth redirect guard, and drives the full flow — blocked `/home` while logged out → login → Home → logout → blocked `/home` again.
 
@@ -300,7 +304,12 @@ Widget tests reach for `firebase_auth_mocks`/`fake_cloud_firestore` whenever a t
 
 ## 🔄 CI/CD
 
-> TODO: set up and document the CI/CD pipeline.
+GitHub Actions (`.github/workflows/main.yaml`) runs on every push/PR to `main` (and on manual `workflow_dispatch`):
+
+1. **Build** — `flutter build web --release`, uploaded as the `web-release` artifact.
+2. **Deploy** — downloads that artifact and syncs it to the production host over FTP (`SamKirkland/FTP-Deploy-Action`, credentials from `FTP_SERVER`/`FTP_USERNAME`/`FTP_PASSWORD` repo secrets).
+
+> TODO: the pipeline doesn't run `flutter analyze`/`flutter test` yet — a red build still deploys as long as it compiles.
 
 ## 🌐 API and data
 
@@ -332,16 +341,19 @@ Some points that may be documented in the future:
 * [x] Responsive, collapsible side menu (10 destinations, user avatar/name header) — sidebar on desktop/web, drawer on mobile
 * [x] Home dashboard redesign (welcome banner, quote categories that open the WebView, family/contracted placeholders)
 * [x] Generic WebView screen
-* [x] Unit tests (repositories, credential storage, cubits, `AuthRemoteDataSourceImpl`)
+* [x] App-wide `AuthCubit`, so `AppRouter`'s redirect guard resolves a Cubit through `get_it` like every other screen instead of reading `AuthRepository` directly
+* [x] Unit tests (repositories, credential storage, cubits — including `AuthCubit` — `AuthRemoteDataSourceImpl`, and `get_it` registration wiring)
 * [x] Widget tests (auth widgets, side menu/`ResponsiveScaffold`, `LoginPage`/`HomePage` flows)
 * [x] Integration test (login → Home → logout → route guard)
+* [x] Set up CI/CD (GitHub Actions — web release build + FTP deploy on push/PR to `main`)
+* [x] Architecture blueprint diagram (`docs/architecture-blueprint.html`) — runtime dependency graph, `get_it` registration order, external packages, directory tree
 * [ ] Registration flow (CPF-based sign-up)
 * [ ] Wire up the remaining side menu destinations (Minhas Contratações, Meus Sinistros, Minha Família, Meus Bens, Pagamentos, Coberturas, Validar Boleto, Telefones Importantes, Configurações)
 * [ ] Create requirements documentation
 * [ ] Define remaining API surface
-* [ ] Broader test coverage (`webview` layer) + coverage report
-* [ ] Set up CI/CD
-* [ ] Document architectural decisions
+* [ ] Broader test coverage (`webview` presentation layer itself — `get_it` wiring is covered, `WebviewPage`/`WebviewCubit` widget behavior isn't) + coverage report
+* [ ] Run `flutter analyze`/`flutter test` in CI (current pipeline only builds and deploys)
+* [ ] Document architectural decisions (the "why" — see `docs/architecture-blueprint.html` for the "what")
 * [ ] Document AI usage
 
 ## 📚 Study goal

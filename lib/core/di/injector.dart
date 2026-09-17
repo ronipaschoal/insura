@@ -9,8 +9,10 @@ import '../../features/auth/data/datasources/auth_remote_datasource.dart';
 import '../../features/auth/data/datasources/auth_remote_datasource_impl.dart';
 import '../../features/auth/data/repositories/auth_repository_impl.dart';
 import '../../features/auth/domain/repositories/auth_repository.dart';
+import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/cubit/login_cubit.dart';
 import '../../features/home/presentation/cubit/home_cubit.dart';
+import '../../features/webview/presentation/cubit/webview_cubit.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -43,6 +45,15 @@ void setupInjector() {
     () => LoginCubit(getIt<AuthRepository>(), getIt<AuthCredentialsStorage>()),
   );
   getIt.registerFactory<HomeCubit>(() => HomeCubit(getIt<AuthRepository>()));
+  // Lazy singleton, not a factory: AppRouter.router is a single static field
+  // shared by the whole app, so its redirect guard needs one long-lived
+  // AuthCubit rather than a fresh instance per resolution.
+  getIt.registerLazySingleton<AuthCubit>(
+    () => AuthCubit(getIt<AuthRepository>()),
+  );
+
+  // Webview feature
+  getIt.registerFactory<WebviewCubit>(() => WebviewCubit());
 }
 
 Future<void> resetInjector() => getIt.reset();

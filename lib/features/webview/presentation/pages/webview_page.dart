@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:webview_flutter/webview_flutter.dart';
 
+import '../../../../core/di/injector.dart';
 import '../cubit/webview_cubit.dart';
 import '../cubit/webview_state.dart';
 
@@ -29,7 +30,7 @@ class _WebviewPageState extends State<WebviewPage> {
   @override
   void initState() {
     super.initState();
-    _cubit = WebviewCubit();
+    _cubit = getIt<WebviewCubit>();
     _controller = WebViewController();
     // webview_flutter_web only implements loadRequest/loadHtmlString - JS
     // mode and the navigation delegate throw UnimplementedError there.

@@ -44,6 +44,10 @@ class FakeAuthRepository implements AuthRepository {
 
   @override
   bool get isLoggedIn => loggedIn;
+
+  /// Whether something is currently subscribed to [authStateChanges] — used
+  /// to assert a subscriber cancels it on dispose.
+  bool get authStateChangesHasListener => _authStateController.hasListener;
 }
 
 /// Hand-rolled [AuthRemoteDataSource] test double, used to unit test

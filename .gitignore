@@ -43,3 +43,6 @@ app.*.map.json
 /android/app/debug
 /android/app/profile
 /android/app/release
+
+# Local path overrides for developing sibling packages (see CLAUDE.md)
+pubspec_overrides.yaml

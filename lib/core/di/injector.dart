@@ -12,7 +12,6 @@ import '../../features/auth/domain/repositories/auth_repository.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/cubit/login_cubit.dart';
 import '../../features/home/presentation/cubit/home_cubit.dart';
-import '../../features/webview/presentation/cubit/webview_cubit.dart';
 
 final GetIt getIt = GetIt.instance;
 
@@ -51,9 +50,6 @@ void setupInjector() {
   getIt.registerLazySingleton<AuthCubit>(
     () => AuthCubit(getIt<AuthRepository>()),
   );
-
-  // Webview feature
-  getIt.registerFactory<WebviewCubit>(() => WebviewCubit());
 }
 
 Future<void> resetInjector() => getIt.reset();

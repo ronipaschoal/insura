@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
 
 import '../theme/app_colors.dart';
-import '../widgets/insura_logo.dart';
+import '../theme/app_theme.dart';
+import '../widgets/insura_app_bar.dart';
 import 'app_side_menu.dart';
 import 'breakpoints.dart';
 
@@ -50,22 +51,11 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
     final isDesktop = MediaQuery.sizeOf(context).width >= Breakpoints.desktop;
 
     return Theme(
-      data: ThemeData(
-        useMaterial3: true,
-        brightness: Brightness.dark,
-        scaffoldBackgroundColor: AppColors.homeBackground,
-        colorScheme: ColorScheme.fromSeed(
-          seedColor: AppColors.loginAccent,
-          brightness: Brightness.dark,
-          surface: AppColors.homeSurface,
-        ),
-      ),
+      data: AppTheme.home,
       child: Scaffold(
         key: _scaffoldKey,
-        appBar: AppBar(
-          backgroundColor: AppColors.homeBackground,
-          elevation: 0,
-          centerTitle: true,
+        appBar: InsuraAppBar(
+          onNotificationsTap: widget.onNotificationsTap,
           leading: IconButton(
             icon: const Icon(Icons.menu),
             tooltip: isDesktop ? 'Recolher/expandir menu' : 'Abrir menu',
@@ -80,19 +70,6 @@ class _ResponsiveScaffoldState extends State<ResponsiveScaffold> {
               }
             },
           ),
-          title: const InsuraLogo(),
-          actions: [
-            IconButton(
-              tooltip: 'Notificações',
-              onPressed: widget.onNotificationsTap,
-              icon: const Badge(
-                backgroundColor: AppColors.homeNotificationBadge,
-                smallSize: 10,
-                child: Icon(Icons.notifications_outlined),
-              ),
-            ),
-            const SizedBox(width: 4),
-          ],
         ),
         drawer: isDesktop
             ? null

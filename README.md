@@ -18,7 +18,7 @@ Currently, the project includes:
 * Home dashboard: gradient welcome banner (greets the user by name, read from the `cpfIndex` Firestore doc), "Cotar e Contratar" quote categories (each one opens the WebView, titled after the category), and empty-state cards for family members / contracted policies
 * Responsive, collapsible side menu (10 nav destinations, user avatar/name header) — a fixed sidebar on desktop/web, a drawer on mobile
 * Logout
-* Generic WebView screen (deep-link/refresh-safe via query parameters)
+* Generic WebView screen (from the standalone `webview_page` package)
 
 New features and improvements will be added as the study evolves.
 
@@ -138,29 +138,23 @@ lib/
     │           ├── social_footer.dart, social_icon.dart
     │           └── cpf_input_formatter.dart
     │
-    ├── home/                          # 🏠 Dashboard / Home
-    │   └── presentation/
-    │       ├── cubit/
-    │       │   ├── home_cubit.dart                       # userName (from AuthRepository.currentUser) + nav selection + logout
-    │       │   └── home_state.dart
-    │       ├── pages/
-    │       │   └── home_page.dart
-    │       └── widgets/
-    │           ├── home_nav_destinations.dart             # Shared side menu destinations source
-    │           ├── home_welcome_banner.dart                # Gradient banner greeting the user
-    │           ├── home_quote_categories.dart              # "Cotar e Contratar" category grid (opens the WebView)
-    │           └── home_placeholder_card.dart              # Empty-state card (family / contracted policies)
-    │
-    └── webview/                       # 🌍 Generic WebView screen
+    └── home/                          # 🏠 Dashboard / Home
         └── presentation/
             ├── cubit/
-            │   ├── webview_cubit.dart                     # Load/error state from NavigationDelegate
-            │   └── webview_state.dart
-            └── pages/
-                └── webview_page.dart                       # WebviewPage/WebviewPageArgs, reused per URL
+            │   ├── home_cubit.dart                       # userName (from AuthRepository.currentUser) + nav selection + logout
+            │   └── home_state.dart
+            ├── pages/
+            │   └── home_page.dart
+            └── widgets/
+                ├── home_nav_destinations.dart             # Shared side menu destinations source
+                ├── home_welcome_banner.dart                # Gradient banner greeting the user
+                ├── home_quote_categories.dart              # "Cotar e Contratar" category grid (opens the WebView)
+                └── home_placeholder_card.dart              # Empty-state card (family / contracted policies)
 ```
 
-> `home` and `webview` don't have a `data`/`domain` layer yet since they don't call an API — not every feature needs all three layers.
+> `home` doesn't have a `data`/`domain` layer yet since it doesn't call an API — not every feature needs all three layers.
+>
+> The generic WebView screen (`WebViewPage`/`WebViewPageBody`, optional `WebViewPageController`) lives in the standalone [`webview_page`](https://github.com/ronipaschoal/webview_page) package (own repo and tests, pinned to a release tag in `pubspec.yaml`). insura only wires it up: the `/webview` route in `app_router.dart` builds `WebViewPage(url:, appBar: const InsuraAppBar(), allowedHosts: [...])` with a URL fixed in code — never read from the route, since on web anyone could craft a link that opens any site inside the app.
 
 ### Layer organization
 
@@ -185,7 +179,7 @@ This organization aims to favor **separation of concerns, low coupling, and ease
 | firebase_core / firebase_auth | Authentication |
 | cloud_firestore | CPF → e-mail/name lookup index for login |
 | flutter_secure_storage | "Remember me" credential persistence |
-| webview_flutter / webview_flutter_web | Generic in-app WebView |
+| webview_page (own package, on `webview_flutter` / `webview_flutter_web`) | Generic in-app WebView |
 | MVVM | Architecture |
 | SOLID | Design principles |
 | bloc_test | Cubit unit testing |
@@ -299,7 +293,9 @@ flutter test integration_test/app_test.dart -d <device-id>
 
 Widget tests reach for `firebase_auth_mocks`/`fake_cloud_firestore` whenever a test needs `FirebaseAuth`/`FirebaseFirestore` from `get_it`, so they never touch real Firebase.
 
-> TODO: add test coverage for the `webview` presentation layer and set up a coverage report.
+> The WebView screen's own tests (controller + widget, against a fake `WebViewPlatform`) live in the [`webview_page`](https://github.com/ronipaschoal/webview_page) package: clone it and run `flutter test` there.
+
+> TODO: set up a coverage report.
 
 ## 🔄 CI/CD
 
@@ -350,7 +346,8 @@ Some points that may be documented in the future:
 * [ ] Wire up the remaining side menu destinations (Minhas Contratações, Meus Sinistros, Minha Família, Meus Bens, Pagamentos, Coberturas, Validar Boleto, Telefones Importantes, Configurações)
 * [ ] Create requirements documentation
 * [ ] Define remaining API surface
-* [ ] Broader test coverage (`webview` presentation layer itself — `get_it` wiring is covered, `WebviewPage`/`WebviewCubit` widget behavior isn't) + coverage report
+* [x] Extract the WebView screen into the standalone `webview_page` package, with its own tests
+* [ ] Coverage report
 * [ ] Run `flutter analyze`/`flutter test` in CI (current pipeline only builds and deploys)
 * [ ] Document architectural decisions (the "why" — see `docs/architecture-blueprint.html` for the "what")
 * [ ] Document AI usage

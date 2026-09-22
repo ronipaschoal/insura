@@ -358,7 +358,7 @@
 
             <rect x="870" y="110" width="230" height="60" rx="7" fill="var(--surface)" stroke="var(--line)"/>
             <text x="985" y="136" text-anchor="middle" font-size="13.5" font-weight="700">WebviewPage</text>
-            <text x="985" y="153" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--muted)">initState()</text>
+            <text x="985" y="153" text-anchor="middle" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--muted)">package:webview_page</text>
           </g>
 
           <!-- Views -> DI row -->
@@ -369,9 +369,9 @@
           <text x="183" y="196" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--muted)">getIt&lt;LoginCubit&gt;()</text>
           <text x="588" y="196" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--muted)">getIt&lt;HomeCubit&gt;()</text>
 
-          <!-- WebviewPage -> get_it, same pattern as LoginPage/HomePage -->
+          <!-- WebviewPage (webview_page package) gets its cubit from AppRouter, which resolves it via get_it -->
           <path d="M985,170 L985,210" stroke="currentColor" stroke-width="1.3" fill="none" opacity=".85" marker-end="url(#arrow)"/>
-          <text x="993" y="196" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--muted)">getIt&lt;WebviewCubit&gt;()</text>
+          <text x="993" y="196" font-family="'IBM Plex Mono',monospace" font-size="10" fill="var(--muted)">cubit: getIt&lt;WebviewCubit&gt;()</text>
 
           <!-- ===== R2 DI ===== -->
           <g>
@@ -509,8 +509,10 @@
         "implements". The <b style="color:var(--accent)">accent-highlighted</b>
         path is the fix — <code>AppRouter</code> now resolves
         <code>AuthCubit</code> from get_it exactly like a page resolves its
-        own cubit, and <code>WebviewPage</code> resolves
-        <code>WebviewCubit</code> the same way.
+        own cubit. <code>WebviewPage</code> comes from the standalone
+        <code>webview_page</code> package, which has no get_it dependency: the
+        <code>/webview</code> route resolves <code>WebviewCubit</code> from
+        get_it and passes it in as <code>cubit:</code>.
       </figcaption>
     </figure>
   </section>
@@ -627,8 +629,8 @@
         <tr><td class="pkg" data-label="Package">firebase_auth</td><td class="ver" data-label="Version">^6.7.0</td><td data-label="Role">Email/password sign-in, session stream — the only auth backend</td><td data-label="Layer"><span class="pill">data / external</span></td></tr>
         <tr><td class="pkg" data-label="Package">cloud_firestore</td><td class="ver" data-label="Version">^6.10.0</td><td data-label="Role"><code>cpfIndex/{cpf}</code> lookup resolving CPF → email (+ optional name) before sign-in</td><td data-label="Layer"><span class="pill">data / external</span></td></tr>
         <tr><td class="pkg" data-label="Package">flutter_secure_storage</td><td class="ver" data-label="Version">^11.1.1</td><td data-label="Role">"Lembrar Sempre" CPF/password persistence — Keychain/Keystore natively, browser storage on web</td><td data-label="Layer"><span class="pill">data</span></td></tr>
-        <tr><td class="pkg" data-label="Package">webview_flutter</td><td class="ver" data-label="Version">^4.14.1</td><td data-label="Role">Native <code>WebViewController</code> — JS mode, navigation delegate, load requests</td><td data-label="Layer"><span class="pill">presentation</span></td></tr>
-        <tr><td class="pkg" data-label="Package">webview_flutter_web</td><td class="ver" data-label="Version">^0.2.3+4</td><td data-label="Role">Web backend for the above — only <code>loadRequest</code>/<code>loadHtmlString</code> implemented, gated by <code>kIsWeb</code> in <code>WebviewPage</code></td><td data-label="Layer"><span class="pill">presentation</span></td></tr>
+        <tr><td class="pkg" data-label="Package">webview_page</td><td class="ver" data-label="Version">path</td><td data-label="Role">Standalone package (<code>../webview_page</code>): <code>WebviewPage</code>/<code>WebviewView</code> + <code>WebviewCubit</code>, on top of <code>webview_flutter</code>/<code>webview_flutter_web</code></td><td data-label="Layer"><span class="pill">presentation</span></td></tr>
+        <tr><td class="pkg" data-label="Package">either_result</td><td class="ver" data-label="Version">git</td><td data-label="Role">Standalone package: Either-style <code>Result&lt;F, S&gt;</code> returned by repositories</td><td data-label="Layer"><span class="pill">domain</span></td></tr>
         <tr><td class="pkg" data-label="Package">cupertino_icons</td><td class="ver" data-label="Version">^1.0.8</td><td data-label="Role">iOS-style icon set</td><td data-label="Layer"><span class="pill">presentation</span></td></tr>
         <tr><td class="pkg" data-label="Package">flutter_lints</td><td class="ver" data-label="Version">^6.0.0</td><td data-label="Role">Lint rule set behind <code>analysis_options.yaml</code></td><td data-label="Layer"><span class="pill dev">dev</span></td></tr>
         <tr><td class="pkg" data-label="Package">bloc_test</td><td class="ver" data-label="Version">^10.0.0</td><td data-label="Role">Cubit/state-sequence assertions for the ViewModel tests</td><td data-label="Layer"><span class="pill dev">dev</span></td></tr>
@@ -674,15 +676,12 @@
     │       │                    auth_cubit.dart, auth_state.dart <span class="note"># app-wide, for AppRouter</span>
     │       ├── <span class="dir">pages/</span>          login_page.dart
     │       └── <span class="dir">widgets/</span>         cpf_input_formatter, login_card, login_header, pill_text_field, social_footer, social_icon, submit_button
-    ├── <span class="dir">home/</span>          <span class="note"># no data/domain — no API calls yet</span>
-    │   └── <span class="dir">presentation/</span>
-    │       ├── <span class="dir">cubit/</span>          home_cubit.dart, home_state.dart
-    │       ├── <span class="dir">pages/</span>          home_page.dart
-    │       └── <span class="dir">widgets/</span>         home_nav_destinations, home_placeholder_card, home_quote_categories, home_welcome_banner
-    └── <span class="dir">webview/</span>       <span class="note"># no data/domain — generic WebviewPage/Args</span>
+    └── <span class="dir">home/</span>          <span class="note"># no data/domain — no API calls yet</span>
         └── <span class="dir">presentation/</span>
-            ├── <span class="dir">cubit/</span>          webview_cubit.dart, webview_state.dart
-            └── <span class="dir">pages/</span>          webview_page.dart
+            ├── <span class="dir">cubit/</span>          home_cubit.dart, home_state.dart
+            ├── <span class="dir">pages/</span>          home_page.dart
+            └── <span class="dir">widgets/</span>         home_nav_destinations, home_placeholder_card, home_quote_categories, home_welcome_banner
+                               <span class="note"># webview screen: webview_page package (../webview_page)</span>
 
 <span class="dir">test/</span>                          <span class="note"># mirrors lib/ by feature; fakes in test/support/fakes.dart</span>
 <span class="dir">integration_test/</span>

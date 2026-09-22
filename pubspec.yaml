@@ -36,8 +36,6 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_bloc: ^9.1.1
   get_it: ^9.2.1
-  webview_flutter: ^4.14.1
-  webview_flutter_web: ^0.2.3+4
   go_router: ^15.0.0
   firebase_core: ^4.15.0
   firebase_auth: ^6.7.0
@@ -51,6 +49,13 @@ dependencies:
     git:
       url: https://github.com/ronipaschoal/either_result.git
       ref: main
+
+  # Generic webview screen (WebViewPage/WebViewPageBody) — standalone repo,
+  # pinned to a release tag so pushes to its main don't change this app.
+  webview_page:
+    git:
+      url: https://github.com/ronipaschoal/webview_page.git
+      ref: v0.2.0
 
 dev_dependencies:
   flutter_test:

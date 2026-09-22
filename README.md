@@ -55,7 +55,7 @@ The project uses **MVVM (Model-View-ViewModel)** as its architectural reference,
 How each principle is applied in Insura's Feature-First + MVVM + Cubit architecture:
 
 * **S — Single Responsibility**: each layer has one job — `presentation/pages` only builds UI, `presentation/cubit` only manages state, `data/repositories` only decides how to fetch data and map failures, `data/datasources` only talks to one specific source (Firebase, secure storage, REST).
-* **O — Open/Closed**: `Result<Failure, S>` and the sealed `LoginState`/`HomeState` classes are closed for contract changes but open for extension via new subclasses — adding a `Failure` type or a `LoginState` variant doesn't require touching existing callers. New features can be added under `features/` without modifying existing ones — the exception is the composition points (`app_router.dart`, `home_nav_destinations.dart`), which, being where features are wired together, require a small, targeted change to register the new feature.
+* **O — Open/Closed**: `Result<Failure, S>` (from the standalone [`either_result`](https://github.com/ronipaschoal/either_result) package) and the sealed `LoginState`/`HomeState` classes are closed for contract changes but open for extension via new subclasses — adding a `Failure` type or a `LoginState` variant doesn't require touching existing callers. New features can be added under `features/` without modifying existing ones — the exception is the composition points (`app_router.dart`, `home_nav_destinations.dart`), which, being where features are wired together, require a small, targeted change to register the new feature.
 * **L — Liskov Substitution**: any `AuthRemoteDataSource`/`AuthRepository` implementation can substitute the abstraction without breaking its consumers — tests take advantage of this by swapping the real `AuthRemoteDataSourceImpl` for hand-rolled fakes (`test/support/fakes.dart`) or Firebase test doubles (`firebase_auth_mocks`, `fake_cloud_firestore`), and `LoginCubit`/`HomeCubit` never notice the difference.
 * **I — Interface Segregation**: repositories/datasources are segregated per concern (`AuthRepository` for auth, `AuthCredentialsStorage` for "remember me" persistence), so a class only depends on the methods it actually uses instead of one monolithic repository.
 * **D — Dependency Inversion**: Cubits and repositories depend on abstractions (`abstract interface class`) injected via constructor through `get_it`, never on concrete implementations (`AuthRemoteDataSourceImpl`, `FirebaseAuth`) — this is what lets hand-rolled fakes and Firebase test doubles (`firebase_auth_mocks`, `fake_cloud_firestore`) stand in for the real thing in tests.
@@ -94,7 +94,6 @@ lib/
 │   ├── di/
 │   │   └── injector.dart              # get_it setup (setupInjector/resetInjector)
 │   ├── result/
-│   │   ├── result.dart                # Either-style Result<Failure, S>
 │   │   └── failure.dart               # Failure hierarchy (Auth/Unknown)
 │   ├── theme/
 │   │   ├── app_theme.dart

@@ -1,13 +1,13 @@
 import 'dart:async';
 
 import 'package:insura/core/result/failure.dart';
-import 'package:insura/core/result/result.dart';
 import 'package:insura/features/auth/data/datasources/auth_credentials_storage.dart';
 import 'package:insura/features/auth/data/datasources/auth_remote_datasource.dart';
 import 'package:insura/features/auth/data/models/login_response_model.dart';
 import 'package:insura/features/auth/domain/entities/saved_credentials.dart';
 import 'package:insura/features/auth/domain/entities/user_entity.dart';
 import 'package:insura/features/auth/domain/repositories/auth_repository.dart';
+import 'package:either_result/either_result.dart';
 
 /// Hand-rolled [AuthRepository] test double — matches this project's
 /// preference for plain fakes over a mocking framework (see [Result]).

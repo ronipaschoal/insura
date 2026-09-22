@@ -1,5 +1,6 @@
+import 'package:either_result/either_result.dart';
+
 import '../../../../core/result/failure.dart';
-import '../../../../core/result/result.dart';
 import '../entities/user_entity.dart';
 
 /// Contract implemented by [AuthRepositoryImpl]. Depending on this interface

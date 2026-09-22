@@ -4,12 +4,12 @@ import 'package:insura/app/app.dart';
 import 'package:insura/app/routes/app_router.dart';
 import 'package:insura/app/routes/app_routes.dart';
 import 'package:insura/core/di/injector.dart';
-import 'package:insura/core/result/result.dart';
 import 'package:insura/features/auth/domain/entities/user_entity.dart';
 import 'package:insura/features/auth/domain/repositories/auth_repository.dart';
 import 'package:insura/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:insura/features/home/presentation/cubit/home_cubit.dart';
 import 'package:integration_test/integration_test.dart';
+import 'package:either_result/either_result.dart';
 
 import '../test/support/fakes.dart';
 

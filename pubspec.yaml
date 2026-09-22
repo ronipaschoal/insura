@@ -44,6 +44,14 @@ dependencies:
   cloud_firestore: ^6.10.0
   flutter_secure_storage: ^11.1.1
 
+  # Either-style Result type — standalone repo, reusable across projects.
+  # `ref` tracks main; pubspec.lock pins the resolved commit. Prefer a tag
+  # (e.g. v0.1.0) once the package starts cutting releases.
+  either_result:
+    git:
+      url: https://github.com/ronipaschoal/either_result.git
+      ref: main
+
 dev_dependencies:
   flutter_test:
     sdk: flutter

@@ -16,6 +16,7 @@ This project is **mobile-first, with a web version**. Design and implement UI/UX
 - Run all tests: `flutter test`
 - Run a single test file: `flutter test test/widget_test.dart`
 - Run a single test by name: `flutter test --plugin-name <name>` or `flutter test -n "<test description>"`
+- Run the `either_result` package tests: clone https://github.com/ronipaschoal/either_result and run `dart test` there (separate repo — see below)
 - Format code: `dart format .`
 
 ## Architecture
@@ -29,7 +30,7 @@ This project is **mobile-first, with a web version**. Design and implement UI/UX
 - **MVVM**: each screen/feature separates View (widgets in `presentation/pages` and `presentation/widgets`) from ViewModel (`presentation/cubit`), with the ViewModel exposing state to the View and containing no Flutter UI code.
 - **State management**: `flutter_bloc`, using **Cubit** (not full Bloc event classes) as the ViewModel layer.
 - **Dependency injection**: `get_it` as the service locator for repositories, data sources, and cubits, registered in `lib/core/di/injector.dart` against interfaces, not implementations.
-- **Result handling**: repository methods return `Result<Failure, S>` (`lib/core/result/result.dart`) instead of throwing — a hand-rolled `Either`-style sealed class with `ResultSuccess`/`ResultFailure` and a `fold` method. Do not add a functional-programming package (`dartz`/`fpdart`/etc.) for this — it's intentionally implemented in-project.
+- **Result handling**: repository methods return `Result<Failure, S>` instead of throwing — a hand-rolled `Either`-style sealed class with `ResultSuccess`/`ResultFailure`, `fold`, `map`/`mapFailure`/`flatMap`, `getOrElse` and `successOrNull`/`failureOrNull`. It lives in its own package, `either_result` (pure Dart, own repo/tests at https://github.com/ronipaschoal/either_result), imported as `package:either_result/either_result.dart` and consumed as a `git:` dependency tracking `main` (the resolved commit is pinned in `pubspec.lock`; run `flutter pub upgrade either_result` to pick up new commits). It's reusable across projects, not just insura. Do not add a functional-programming package (`dartz`/`fpdart`/etc.) for this — it's intentionally implemented in-project. The package stays app-agnostic: the `Failure` hierarchy (`AuthFailure`/`UnknownFailure`, pt-BR messages) is insura domain and stays in `lib/core/result/failure.dart`. Changes to `Result` are made and tested in the `either_result` repo (`dart test`), then pulled into insura with `flutter pub upgrade either_result`.
 - **SOLID**: repositories and data sources are defined as `abstract interface class` in `domain/repositories` (or `data/datasources`), always in their own file, with the implementation in a sibling `..._impl.dart` file (e.g. `auth_repository.dart`/`auth_repository_impl.dart`, `auth_remote_datasource.dart`/`auth_remote_datasource_impl.dart`) — never combine interface and implementation in one file. `get_it` injects the interface, never the concrete class.
 - **Routing**: `go_router` via `MaterialApp.router`, configured in `lib/app/routes/app_router.dart` (one `GoRoute` per screen); route path constants live in `app_routes.dart`. Web URLs are hash-based (`/#/home`) — the deployed host has no server-side rewrite rule to fall back to `index.html` for deep links, so switching to `usePathUrlStrategy()` (path-based, `/home`) would 404 on a direct/refreshed visit to any route but `/`. Navigate with `context.go`/`context.push`, not `Navigator`. Screens needing dynamic data (e.g. `/webview`) read it from query parameters (`state.uri.queryParameters`) rather than route `arguments`/`extra`, so the URL is deep-link/refresh-safe — build target URLs with `Uri(path: ..., queryParameters: {...}).toString()`.
 - **Webview screens**: `webview_flutter`, wrapped by the `webview` feature (`WebviewCubit` tracks load/error state from the platform `NavigationDelegate`). New webview screens should reuse `WebviewPage`/`WebviewPageArgs` (pass a different `url`/`title`) rather than creating a new page per URL — e.g. every "Cotar e Contratar" category on Home pushes `/webview` with only `title` set (`HomePage._onQuoteCategoryTap`), so they all fall back to `app_router.dart`'s default `url`. `webview_flutter_web` only implements `loadRequest`/`loadHtmlString` — `WebviewPage` guards `setJavaScriptMode`/`setNavigationDelegate` behind `kIsWeb` (both throw `UnimplementedError` on web) and immediately marks the page loaded there instead of tracking real progress. Note some sites also refuse to render in the web iframe entirely (`X-Frame-Options`/CSP `frame-ancestors`) — that's the target site's own restriction, not fixable app-side; prefer a URL known to allow framing as the default.
@@ -38,6 +39,8 @@ This project is **mobile-first, with a web version**. Design and implement UI/UX
 ### Folder structure
 
 Feature-first: each feature under `lib/features/<feature>/` has its own `data/` (datasources, models, repository impl), `domain/` (entities, repository interfaces), and `presentation/` (cubit, pages, widgets) — not every feature needs all three (e.g. `home` and `webview` currently have no `data`/`domain` layer since they don't call an API yet).
+
+Reusable, Flutter-free building blocks that other projects might also need are pulled out into their own repos and consumed as dependencies rather than living under `lib/` — currently just `either_result` (Either-style `Result<F, S>`, https://github.com/ronipaschoal/either_result).
 
 ```
 lib/
@@ -49,7 +52,7 @@ lib/
 │       └── app_routes.dart      # route path constants
 ├── core/
 │   ├── di/injector.dart         # get_it setup (setupInjector/resetInjector)
-│   ├── result/                  # result.dart (Either-style), failure.dart
+│   ├── result/                  # failure.dart (Failure hierarchy; Result<F, S> lives in the either_result package)
 │   ├── theme/                   # app_theme.dart, app_colors.dart
 │   ├── widgets/                 # insura_logo.dart (shared brand mark)
 │   └── responsive/              # breakpoints.dart, app_side_menu.dart, responsive_scaffold.dart

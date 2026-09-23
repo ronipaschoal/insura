@@ -154,7 +154,7 @@ lib/
 
 > `home` doesn't have a `data`/`domain` layer yet since it doesn't call an API — not every feature needs all three layers.
 >
-> The generic WebView screen (`WebViewPage`/`WebViewPageBody`, optional `WebViewPageController`) lives in the standalone [`webview_page`](https://github.com/ronipaschoal/webview_page) package (own repo and tests, pinned to a release tag in `pubspec.yaml`). insura only wires it up: the `/webview` route in `app_router.dart` builds `WebViewPage(url:, appBar: const InsuraAppBar(), allowedHosts: [...])` with a URL fixed in code — never read from the route, since on web anyone could craft a link that opens any site inside the app.
+> The generic WebView screen (`WebViewPage`/`WebViewPageBody`, optional `WebViewPageController`) lives in the standalone [`webview_page`](https://github.com/ronipaschoal/webview_page) package (own repo and tests, pinned to a release tag in `pubspec.yaml`). insura only wires it up: the `/webview` route in `app_router.dart` builds `WebViewPage(url:, appBar: const InsuraAppBar(), allowedHosts: [...], androidTextZoom: 100)` with a URL fixed in code — never read from the route, since on web anyone could craft a link that opens any site inside the app. `androidTextZoom: 100` keeps Android's WebView from applying the system font size as text zoom, which breaks the layout of the (Flutter web) target page and leaves it blank when the font size is below 100%.
 
 ### Layer organization
 
@@ -347,6 +347,7 @@ Some points that may be documented in the future:
 * [ ] Create requirements documentation
 * [ ] Define remaining API surface
 * [x] Extract the WebView screen into the standalone `webview_page` package, with its own tests
+* [x] Fix the blank WebView on Android with the system font size below 100% (`androidTextZoom`, `webview_page` v0.3.0)
 * [ ] Coverage report
 * [ ] Run `flutter analyze`/`flutter test` in CI (current pipeline only builds and deploys)
 * [ ] Document architectural decisions (the "why" — see `docs/architecture-blueprint.html` for the "what")

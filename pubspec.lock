@@ -1033,11 +1033,11 @@ packages:
     dependency: "direct main"
     description:
       path: "."
-      ref: "v0.2.0"
-      resolved-ref: "9dac0ecbe6e02c570bb13ddb6f86a8d456a93f8e"
+      ref: "v0.3.0"
+      resolved-ref: f62d094958cd74bc397d9b338ba928acc07e686f
       url: "https://github.com/ronipaschoal/webview_page.git"
     source: git
-    version: "0.2.0"
+    version: "0.3.0"
   win32:
     dependency: transitive
     description:

@@ -39,6 +39,9 @@ abstract final class AppRouter {
           url: 'https://ronipaschoal.com.br/#/insura',
           appBar: InsuraAppBar(),
           allowedHosts: ['ronipaschoal.com.br'],
+          // The page is a Flutter web app, whose layout breaks under the
+          // system font size's text zoom (e.g. 85%) — the page goes blank.
+          androidTextZoom: 100,
         ),
       ),
     ],

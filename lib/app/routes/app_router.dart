@@ -36,9 +36,9 @@ abstract final class AppRouter {
         // is the browser address, so a crafted ?url= would open any site
         // inside the app.
         builder: (context, state) => const WebViewPage(
-          url: 'https://ronipaschoal.com.br/#/insura',
+          url: 'https://webview.ronipaschoal.com.br/insura',
           appBar: InsuraAppBar(),
-          allowedHosts: ['ronipaschoal.com.br'],
+          allowedHosts: ['webview.ronipaschoal.com.br'],
           // The page is a Flutter web app, whose layout breaks under the
           // system font size's text zoom (e.g. 85%) — the page goes blank.
           androidTextZoom: 100,

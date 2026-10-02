@@ -1,11 +1,11 @@
 import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:insura/core/result/failure.dart';
-import 'package:insura/core/result/result.dart';
 import 'package:insura/features/auth/domain/entities/saved_credentials.dart';
 import 'package:insura/features/auth/domain/entities/user_entity.dart';
 import 'package:insura/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:insura/features/auth/presentation/cubit/login_state.dart';
+import 'package:either_result/either_result.dart';
 
 import '../../../../support/fakes.dart';
 

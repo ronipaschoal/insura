@@ -1,10 +1,11 @@
 import 'package:go_router/go_router.dart';
+import 'package:webview_page/webview_page.dart';
 
 import '../../core/di/injector.dart';
+import '../../core/widgets/insura_app_bar.dart';
 import '../../features/auth/presentation/cubit/auth_cubit.dart';
 import '../../features/auth/presentation/pages/login_page.dart';
 import '../../features/home/presentation/pages/home_page.dart';
-import '../../features/webview/presentation/pages/webview_page.dart';
 import 'app_routes.dart';
 import 'go_router_refresh_stream.dart';
 
@@ -31,15 +32,17 @@ abstract final class AppRouter {
       ),
       GoRoute(
         path: AppRoutes.webview,
-        builder: (context, state) {
-          final params = state.uri.queryParameters;
-          return WebviewPage(
-            args: WebviewPageArgs(
-              url: params['url'] ?? 'https://ronipaschoal.com.br/#/insura',
-              title: params['title'] ?? 'WebView',
-            ),
-          );
-        },
+        // The url is fixed here, never read from the route: on web the route
+        // is the browser address, so a crafted ?url= would open any site
+        // inside the app.
+        builder: (context, state) => const WebViewPage(
+          url: 'https://webview.ronipaschoal.com.br/insura',
+          appBar: InsuraAppBar(),
+          allowedHosts: ['webview.ronipaschoal.com.br'],
+          // The page is a Flutter web app, whose layout breaks under the
+          // system font size's text zoom (e.g. 85%) — the page goes blank.
+          androidTextZoom: 100,
+        ),
       ),
     ],
   );

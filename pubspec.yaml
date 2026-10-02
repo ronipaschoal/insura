@@ -36,13 +36,26 @@ dependencies:
   cupertino_icons: ^1.0.8
   flutter_bloc: ^9.1.1
   get_it: ^9.2.1
-  webview_flutter: ^4.14.1
-  webview_flutter_web: ^0.2.3+4
   go_router: ^15.0.0
   firebase_core: ^4.15.0
   firebase_auth: ^6.7.0
   cloud_firestore: ^6.10.0
   flutter_secure_storage: ^11.1.1
+
+  # Either-style Result type — standalone repo, reusable across projects.
+  # `ref` tracks main; pubspec.lock pins the resolved commit. Prefer a tag
+  # (e.g. v0.1.0) once the package starts cutting releases.
+  either_result:
+    git:
+      url: https://github.com/ronipaschoal/either_result.git
+      ref: main
+
+  # Generic webview screen (WebViewPage/WebViewPageBody) — standalone repo,
+  # pinned to a release tag so pushes to its main don't change this app.
+  webview_page:
+    git:
+      url: https://github.com/ronipaschoal/webview_page.git
+      ref: v0.3.0
 
 dev_dependencies:
   flutter_test:

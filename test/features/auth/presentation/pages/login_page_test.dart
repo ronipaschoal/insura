@@ -4,12 +4,12 @@ import 'package:go_router/go_router.dart';
 import 'package:insura/app/routes/app_routes.dart';
 import 'package:insura/core/di/injector.dart';
 import 'package:insura/core/result/failure.dart';
-import 'package:insura/core/result/result.dart';
 import 'package:insura/features/auth/domain/entities/saved_credentials.dart';
 import 'package:insura/features/auth/domain/entities/user_entity.dart';
 import 'package:insura/features/auth/domain/repositories/auth_repository.dart';
 import 'package:insura/features/auth/presentation/cubit/login_cubit.dart';
 import 'package:insura/features/auth/presentation/pages/login_page.dart';
+import 'package:either_result/either_result.dart';
 
 import '../../../../support/fakes.dart';
 

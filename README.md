@@ -18,7 +18,7 @@ Currently, the project includes:
 * Home dashboard: gradient welcome banner (greets the user by name, read from the `cpfIndex` Firestore doc), "Cotar e Contratar" quote categories (each one opens the WebView, titled after the category), and empty-state cards for family members / contracted policies
 * Responsive, collapsible side menu (10 nav destinations, user avatar/name header) — a fixed sidebar on desktop/web, a drawer on mobile
 * Logout
-* Generic WebView screen (deep-link/refresh-safe via query parameters)
+* Generic WebView screen (from the standalone `webview_page` package)
 
 New features and improvements will be added as the study evolves.
 
@@ -55,7 +55,7 @@ The project uses **MVVM (Model-View-ViewModel)** as its architectural reference,
 How each principle is applied in Insura's Feature-First + MVVM + Cubit architecture:
 
 * **S — Single Responsibility**: each layer has one job — `presentation/pages` only builds UI, `presentation/cubit` only manages state, `data/repositories` only decides how to fetch data and map failures, `data/datasources` only talks to one specific source (Firebase, secure storage, REST).
-* **O — Open/Closed**: `Result<Failure, S>` and the sealed `LoginState`/`HomeState` classes are closed for contract changes but open for extension via new subclasses — adding a `Failure` type or a `LoginState` variant doesn't require touching existing callers. New features can be added under `features/` without modifying existing ones — the exception is the composition points (`app_router.dart`, `home_nav_destinations.dart`), which, being where features are wired together, require a small, targeted change to register the new feature.
+* **O — Open/Closed**: `Result<Failure, S>` (from the standalone [`either_result`](https://github.com/ronipaschoal/either_result) package) and the sealed `LoginState`/`HomeState` classes are closed for contract changes but open for extension via new subclasses — adding a `Failure` type or a `LoginState` variant doesn't require touching existing callers. New features can be added under `features/` without modifying existing ones — the exception is the composition points (`app_router.dart`, `home_nav_destinations.dart`), which, being where features are wired together, require a small, targeted change to register the new feature.
 * **L — Liskov Substitution**: any `AuthRemoteDataSource`/`AuthRepository` implementation can substitute the abstraction without breaking its consumers — tests take advantage of this by swapping the real `AuthRemoteDataSourceImpl` for hand-rolled fakes (`test/support/fakes.dart`) or Firebase test doubles (`firebase_auth_mocks`, `fake_cloud_firestore`), and `LoginCubit`/`HomeCubit` never notice the difference.
 * **I — Interface Segregation**: repositories/datasources are segregated per concern (`AuthRepository` for auth, `AuthCredentialsStorage` for "remember me" persistence), so a class only depends on the methods it actually uses instead of one monolithic repository.
 * **D — Dependency Inversion**: Cubits and repositories depend on abstractions (`abstract interface class`) injected via constructor through `get_it`, never on concrete implementations (`AuthRemoteDataSourceImpl`, `FirebaseAuth`) — this is what lets hand-rolled fakes and Firebase test doubles (`firebase_auth_mocks`, `fake_cloud_firestore`) stand in for the real thing in tests.
@@ -94,7 +94,6 @@ lib/
 │   ├── di/
 │   │   └── injector.dart              # get_it setup (setupInjector/resetInjector)
 │   ├── result/
-│   │   ├── result.dart                # Either-style Result<Failure, S>
 │   │   └── failure.dart               # Failure hierarchy (Auth/Unknown)
 │   ├── theme/
 │   │   ├── app_theme.dart
@@ -139,29 +138,23 @@ lib/
     │           ├── social_footer.dart, social_icon.dart
     │           └── cpf_input_formatter.dart
     │
-    ├── home/                          # 🏠 Dashboard / Home
-    │   └── presentation/
-    │       ├── cubit/
-    │       │   ├── home_cubit.dart                       # userName (from AuthRepository.currentUser) + nav selection + logout
-    │       │   └── home_state.dart
-    │       ├── pages/
-    │       │   └── home_page.dart
-    │       └── widgets/
-    │           ├── home_nav_destinations.dart             # Shared side menu destinations source
-    │           ├── home_welcome_banner.dart                # Gradient banner greeting the user
-    │           ├── home_quote_categories.dart              # "Cotar e Contratar" category grid (opens the WebView)
-    │           └── home_placeholder_card.dart              # Empty-state card (family / contracted policies)
-    │
-    └── webview/                       # 🌍 Generic WebView screen
+    └── home/                          # 🏠 Dashboard / Home
         └── presentation/
             ├── cubit/
-            │   ├── webview_cubit.dart                     # Load/error state from NavigationDelegate
-            │   └── webview_state.dart
-            └── pages/
-                └── webview_page.dart                       # WebviewPage/WebviewPageArgs, reused per URL
+            │   ├── home_cubit.dart                       # userName (from AuthRepository.currentUser) + nav selection + logout
+            │   └── home_state.dart
+            ├── pages/
+            │   └── home_page.dart
+            └── widgets/
+                ├── home_nav_destinations.dart             # Shared side menu destinations source
+                ├── home_welcome_banner.dart                # Gradient banner greeting the user
+                ├── home_quote_categories.dart              # "Cotar e Contratar" category grid (opens the WebView)
+                └── home_placeholder_card.dart              # Empty-state card (family / contracted policies)
 ```
 
-> `home` and `webview` don't have a `data`/`domain` layer yet since they don't call an API — not every feature needs all three layers.
+> `home` doesn't have a `data`/`domain` layer yet since it doesn't call an API — not every feature needs all three layers.
+>
+> The generic WebView screen (`WebViewPage`/`WebViewPageBody`, optional `WebViewPageController`) lives in the standalone [`webview_page`](https://github.com/ronipaschoal/webview_page) package (own repo and tests, pinned to a release tag in `pubspec.yaml`). insura only wires it up: the `/webview` route in `app_router.dart` builds `WebViewPage(url:, appBar: const InsuraAppBar(), allowedHosts: [...], androidTextZoom: 100)` with a URL fixed in code — never read from the route, since on web anyone could craft a link that opens any site inside the app. `androidTextZoom: 100` keeps Android's WebView from applying the system font size as text zoom, which breaks the layout of the (Flutter web) target page and leaves it blank when the font size is below 100%.
 
 ### Layer organization
 
@@ -186,7 +179,7 @@ This organization aims to favor **separation of concerns, low coupling, and ease
 | firebase_core / firebase_auth | Authentication |
 | cloud_firestore | CPF → e-mail/name lookup index for login |
 | flutter_secure_storage | "Remember me" credential persistence |
-| webview_flutter / webview_flutter_web | Generic in-app WebView |
+| webview_page (own package, on `webview_flutter` / `webview_flutter_web`) | Generic in-app WebView |
 | MVVM | Architecture |
 | SOLID | Design principles |
 | bloc_test | Cubit unit testing |
@@ -300,7 +293,9 @@ flutter test integration_test/app_test.dart -d <device-id>
 
 Widget tests reach for `firebase_auth_mocks`/`fake_cloud_firestore` whenever a test needs `FirebaseAuth`/`FirebaseFirestore` from `get_it`, so they never touch real Firebase.
 
-> TODO: add test coverage for the `webview` presentation layer and set up a coverage report.
+> The WebView screen's own tests (controller + widget, against a fake `WebViewPlatform`) live in the [`webview_page`](https://github.com/ronipaschoal/webview_page) package: clone it and run `flutter test` there.
+
+> TODO: set up a coverage report.
 
 ## 🔄 CI/CD
 
@@ -351,7 +346,9 @@ Some points that may be documented in the future:
 * [ ] Wire up the remaining side menu destinations (Minhas Contratações, Meus Sinistros, Minha Família, Meus Bens, Pagamentos, Coberturas, Validar Boleto, Telefones Importantes, Configurações)
 * [ ] Create requirements documentation
 * [ ] Define remaining API surface
-* [ ] Broader test coverage (`webview` presentation layer itself — `get_it` wiring is covered, `WebviewPage`/`WebviewCubit` widget behavior isn't) + coverage report
+* [x] Extract the WebView screen into the standalone `webview_page` package, with its own tests
+* [x] Fix the blank WebView on Android with the system font size below 100% (`androidTextZoom`, `webview_page` v0.3.0)
+* [ ] Coverage report
 * [ ] Run `flutter analyze`/`flutter test` in CI (current pipeline only builds and deploys)
 * [ ] Document architectural decisions (the "why" — see `docs/architecture-blueprint.html` for the "what")
 * [ ] Document AI usage

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../core/responsive/device_preview_shell.dart';
 import '../core/theme/app_theme.dart';
 import 'routes/app_router.dart';
 
@@ -12,6 +13,7 @@ class App extends StatelessWidget {
       title: 'Insura',
       theme: AppTheme.light,
       routerConfig: AppRouter.router,
+      builder: (context, child) => DevicePreviewShell(child: child!),
     );
   }
 }

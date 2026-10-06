@@ -44,7 +44,7 @@ void main() {
         GoRoute(
           path: AppRoutes.webview,
           builder: (_, state) => Scaffold(
-            body: Text('WEBVIEW:${state.uri.queryParameters['title']}'),
+            body: Text('WEBVIEW:${state.uri.queryParameters['page']}'),
           ),
         ),
       ],
@@ -66,41 +66,38 @@ void main() {
     expect(find.text('Ana'), findsOneWidget);
   });
 
-  testWidgets('tapping Home/Seguros does not show a coming-soon snackbar', (
+  testWidgets('tapping Home/Seguros stays on Home', (tester) async {
+    await pumpHomePage(tester);
+    await openMenu(tester);
+
+    await tester.tap(find.text('Home/Seguros'));
+    await tester.pumpAndSettle();
+
+    expect(find.textContaining('WEBVIEW:'), findsNothing);
+    expect(find.text('Ana'), findsOneWidget);
+  });
+
+  testWidgets('tapping another menu item opens the WebView with its id', (
     tester,
   ) async {
     await pumpHomePage(tester);
     await openMenu(tester);
 
-    await tester.tap(find.text('Home/Seguros'));
-    await tester.pump();
+    await tester.tap(find.text('Minhas Contratações'));
+    await tester.pumpAndSettle();
 
-    expect(find.text('Em breve!'), findsNothing);
+    expect(find.text('WEBVIEW:minhas-contratacoes'), findsOneWidget);
   });
 
   testWidgets(
-    'tapping an unimplemented destination shows a coming-soon snackbar',
-    (tester) async {
-      await pumpHomePage(tester);
-      await openMenu(tester);
-
-      await tester.tap(find.text('Minhas Contratações'));
-      await tester.pump();
-
-      expect(find.text('Em breve!'), findsOneWidget);
-    },
-  );
-
-  testWidgets(
-    'tapping a "Cotar e Contratar" category opens the WebView with its '
-    'label as the title',
+    'tapping a "Cotar e Contratar" category opens the WebView with its id',
     (tester) async {
       await pumpHomePage(tester);
 
       await tester.tap(find.text('Automóvel'));
       await tester.pumpAndSettle();
 
-      expect(find.text('WEBVIEW:Automóvel'), findsOneWidget);
+      expect(find.text('WEBVIEW:auto'), findsOneWidget);
     },
   );
 

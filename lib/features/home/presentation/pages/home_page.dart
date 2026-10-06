@@ -10,6 +10,7 @@ import '../cubit/home_state.dart';
 import '../widgets/home_nav_destinations.dart';
 import '../widgets/home_placeholder_card.dart';
 import '../widgets/home_quote_categories.dart';
+import '../widgets/home_webview_target.dart';
 import '../widgets/home_welcome_banner.dart';
 
 const _sectionTitleStyle = TextStyle(
@@ -22,24 +23,25 @@ class HomePage extends StatelessWidget {
   const HomePage({super.key});
 
   void _onDestinationSelected(BuildContext context, int index) {
-    context.read<HomeCubit>().selectDestination(index);
-    // Only "Home/Seguros" (index 0) has a real screen today; the rest of
-    // the menu items from the new nav design have no feature built yet.
-    if (index != 0) {
-      ScaffoldMessenger.of(
-        context,
-      ).showSnackBar(const SnackBar(content: Text('Em breve!')));
+    // Only "Home/Seguros" (index 0) has a real screen today; the other menu
+    // items open the placeholder WebView on top of Home, so the selection
+    // stays on Home for when the user comes back.
+    if (index == 0) {
+      context.read<HomeCubit>().selectDestination(index);
+    } else {
+      _openWebView(context, homeMenuWebViewItems[index - 1]);
     }
   }
 
-  void _onQuoteCategoryTap(BuildContext context, HomeQuoteCategory category) {
-    // No dedicated quote flow per category yet, so all of them land on the
-    // same placeholder WebView (its URL default lives in app_router.dart);
-    // only the title changes to reflect which category was tapped.
+  void _openWebView(BuildContext context, HomeWebViewTarget target) {
+    // No dedicated flow per quote category or menu item yet, so all of them
+    // land on the same placeholder WebView (its URL lives in app_router.dart);
+    // only the app bar's icon and title change, looked up from the id by the
+    // route.
     context.push(
       Uri(
         path: AppRoutes.webview,
-        queryParameters: {'title': category.label},
+        queryParameters: {'page': target.id},
       ).toString(),
     );
   }
@@ -79,7 +81,7 @@ class HomePage extends StatelessWidget {
                         const SizedBox(height: 12),
                         HomeQuoteCategories(
                           onCategoryTap: (category) =>
-                              _onQuoteCategoryTap(context, category),
+                              _openWebView(context, category),
                         ),
                         const SizedBox(height: 28),
                         const Text('Minha Família', style: _sectionTitleStyle),

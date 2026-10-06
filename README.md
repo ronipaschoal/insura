@@ -15,10 +15,12 @@ Currently, the project includes:
 * Login by CPF + password (Firebase Authentication)
 * "Remember me" (saved credentials, restored on next launch)
 * Session-aware routing (auto-redirects to Login when signed out, and away from Login when already signed in)
-* Home dashboard: gradient welcome banner (greets the user by name, read from the `cpfIndex` Firestore doc), "Cotar e Contratar" quote categories (each one opens the WebView, titled after the category), and empty-state cards for family members / contracted policies
-* Responsive, collapsible side menu (10 nav destinations, user avatar/name header) — a fixed sidebar on desktop/web, a drawer on mobile
+* Home dashboard: gradient welcome banner (greets the user by name, read from the `cpfIndex` Firestore doc), "Cotar e Contratar" quote categories (each one opens the WebView with the category's icon and title in the app bar), and empty-state cards for family members / contracted policies
+* Responsive, collapsible side menu (10 nav destinations, user avatar/name header) — a fixed sidebar on desktop/web, a drawer on mobile; every item but Home/Seguros opens the WebView with its own icon and title in the app bar
 * Logout
 * Generic WebView screen (from the standalone `webview_page` package)
+* Device preview on large screens: a bottom banner with a Web/Mobile toggle that shows the app either as the regular web layout or inside a mocked phone in the middle of the screen
+* Launcher icon (Android, iOS, web) built from the brand logo — the shield over the login gradient
 
 New features and improvements will be added as the study evolves.
 
@@ -71,7 +73,7 @@ This choice separates state from the presentation layer, keeping widgets focused
 
 ### Routing
 
-Navigation uses **go_router** (`MaterialApp.router`), configured in `lib/app/routes/app_router.dart`. A `redirect` callback guards every route, backed by an app-wide `AuthCubit` (`getIt<AuthCubit>()`) rather than `AuthRepository` directly — the router resolves it from `get_it` the same way a page resolves its own Cubit: unauthenticated users are sent back to `/login`, and authenticated users are kept out of `/login`. Screens needing dynamic data (like `/webview`) read it from query parameters rather than route `extra`, so URLs stay deep-link/refresh-safe on web.
+Navigation uses **go_router** (`MaterialApp.router`), configured in `lib/app/routes/app_router.dart`. A `redirect` callback guards every route, backed by an app-wide `AuthCubit` (`getIt<AuthCubit>()`) rather than `AuthRepository` directly — the router resolves it from `get_it` the same way a page resolves its own Cubit: unauthenticated users are sent back to `/login`, and authenticated users are kept out of `/login`. Screens needing dynamic data (like `/webview?page=<id>`) read it from query parameters rather than route `extra`, so URLs stay deep-link/refresh-safe on web.
 
 Web URLs are hash-based (`/#/home`) on purpose: the deployed host has no server-side rewrite rule to fall back to `index.html` on a direct/refreshed visit to a deep link, which is what path-based URLs (Flutter's `usePathUrlStrategy()`) require to avoid 404s.
 
@@ -84,7 +86,7 @@ lib/
 ├── main.dart                          # 🎬 Firebase.initializeApp() + setupInjector()
 │
 ├── app/
-│   ├── app.dart                       # MaterialApp.router + theme
+│   ├── app.dart                       # MaterialApp.router + theme + DevicePreviewShell builder
 │   └── routes/
 │       ├── app_router.dart            # GoRouter config: routes + auth redirect guard
 │       ├── app_routes.dart            # Route path constants
@@ -99,11 +101,13 @@ lib/
 │   │   ├── app_theme.dart
 │   │   └── app_colors.dart
 │   ├── widgets/
-│   │   └── insura_logo.dart           # Shared brand mark (login header + side menu app bar)
+│   │   ├── insura_logo.dart           # Shared brand mark (login header + app bar)
+│   │   └── insura_app_bar.dart        # Branded app bar: logo, or a page's icon + title (WebView)
 │   └── responsive/
 │       ├── breakpoints.dart
 │       ├── app_side_menu.dart         # Side menu content: user header (avatar/name) + nav items + logout
-│       └── responsive_scaffold.dart   # Shared nav shell: collapsible AppSideMenu sidebar (desktop) / Drawer (mobile)
+│       ├── responsive_scaffold.dart   # Shared nav shell: collapsible AppSideMenu sidebar (desktop) / Drawer (mobile)
+│       └── device_preview_shell.dart  # Large screens: bottom banner toggling web layout / mocked phone
 │
 └── features/                          # 📦 Modules organized by feature
     │
@@ -146,15 +150,17 @@ lib/
             ├── pages/
             │   └── home_page.dart
             └── widgets/
-                ├── home_nav_destinations.dart             # Shared side menu destinations source
+                ├── home_nav_destinations.dart             # Side menu items (HomeMenuItem) → shared nav destinations
                 ├── home_welcome_banner.dart                # Gradient banner greeting the user
                 ├── home_quote_categories.dart              # "Cotar e Contratar" category grid (opens the WebView)
+                ├── home_webview_target.dart                # Interface: id + icon + label of what opens the WebView
+                ├── home_webview_targets.dart               # All categories + menu items, looked up by id (?page=)
                 └── home_placeholder_card.dart              # Empty-state card (family / contracted policies)
 ```
 
 > `home` doesn't have a `data`/`domain` layer yet since it doesn't call an API — not every feature needs all three layers.
 >
-> The generic WebView screen (`WebViewPage`/`WebViewPageBody`, optional `WebViewPageController`) lives in the standalone [`webview_page`](https://github.com/ronipaschoal/webview_page) package (own repo and tests, pinned to a release tag in `pubspec.yaml`). insura only wires it up: the `/webview` route in `app_router.dart` builds `WebViewPage(url:, appBar: const InsuraAppBar(), allowedHosts: [...], androidTextZoom: 100)` with a URL fixed in code — never read from the route, since on web anyone could craft a link that opens any site inside the app. `androidTextZoom: 100` keeps Android's WebView from applying the system font size as text zoom, which breaks the layout of the (Flutter web) target page and leaves it blank when the font size is below 100%.
+> The generic WebView screen (`WebViewPage`/`WebViewPageBody`, optional `WebViewPageController`) lives in the standalone [`webview_page`](https://github.com/ronipaschoal/webview_page) package (own repo and tests, pinned to a release tag in `pubspec.yaml`). insura only wires it up: the `/webview` route in `app_router.dart` builds `WebViewPage(url:, appBar: InsuraAppBar(icon:, title:), allowedHosts: [...], androidTextZoom: 100)` with a URL fixed in code — never read from the route, since on web anyone could craft a link that opens any site inside the app. The route only reads `?page=<id>`, looked up in a fixed list of quote categories and side menu items (`homeWebViewTargetById`) to pick the app bar's icon and title; an unknown id falls back to the logo. `androidTextZoom: 100` keeps Android's WebView from applying the system font size as text zoom, which breaks the layout of the (Flutter web) target page and leaves it blank when the font size is below 100%.
 
 ### Layer organization
 
@@ -185,12 +191,11 @@ This organization aims to favor **separation of concerns, low coupling, and ease
 | bloc_test | Cubit unit testing |
 | integration_test | End-to-end app flow testing |
 | firebase_auth_mocks / fake_cloud_firestore | In-memory Firebase test doubles |
+| flutter_launcher_icons | Generates the Android/iOS/web launcher icons from `assets/icon/` |
 | Claude Code | Development support with AI |
 | Dart/Flutter MCP | Claude Code plugin (`dart-flutter`) providing analysis, hot reload/restart, LSP, and runtime error inspection tools |
 
 **Flutter:** `3.44`
-
-> TODO: add other libraries and dependencies used in the project as they're introduced.
 
 ## 🤖 Artificial Intelligence
 
@@ -199,8 +204,6 @@ This organization aims to favor **separation of concerns, low coupling, and ease
 **Claude Code** was used as a support tool during development — from scaffolding the MVVM architecture, to wiring Firebase Authentication + Firestore, to browser-driven verification of features (login, logout, route guards, "remember me") before considering them done.
 
 The goal is not just to use AI to generate code, but to explore how AI tools can be part of the software development process while maintaining technical ownership of the decisions and code produced.
-
-> TODO: document further examples of AI usage and decisions made during development.
 
 ## 🚀 Getting started
 
@@ -244,6 +247,17 @@ Run the app:
 flutter run
 ```
 
+### Launcher icon
+
+The icon sources in `assets/icon/` are rendered from the brand mark (`Icons.shield_outlined` over the login gradient) by a Flutter test, then turned into every platform's icons by `flutter_launcher_icons` (config in `pubspec.yaml`):
+
+```bash
+flutter test tool/app_icon/generate_app_icon_test.dart
+dart run flutter_launcher_icons
+```
+
+> `flutter_launcher_icons` (0.14.4) rewrites the wrong key in `ios/Runner.xcodeproj/project.pbxproj` (`ASSETCATALOG_COMPILER_GENERATE_SWIFT_ASSET_SYMBOL_EXTENSIONS`) — revert that file afterwards.
+
 ### Test credentials
 
 A test user is seeded in the Firebase project for trying out the login screen:
@@ -275,7 +289,7 @@ claude mcp list
 Three layers of automated tests, mirroring the Feature-First structure:
 
 * **Unit tests** — `test/features/**/data/`, `test/features/**/presentation/cubit/`, `test/core/di/`: repositories, credential storage, and Cubits (`LoginCubit`, `HomeCubit`, `AuthCubit`), tested with hand-rolled fakes (`test/support/fakes.dart`) and `bloc_test` — no mocking framework, same spirit as this project's own `Result` type. `AuthRemoteDataSourceImpl` itself (the Firestore `cpfIndex` lookup + Firebase Auth sign-in) is tested against `firebase_auth_mocks`/`fake_cloud_firestore` instead, since it talks to Firebase directly rather than through an injected fake. `test/core/di/injector_test.dart` is a smoke test that every cubit `setupInjector()` registers actually resolves from `get_it`.
-* **Widget tests** — `test/core/responsive/`, `test/features/**/presentation/{pages,widgets}/`, and `test/widget_test.dart`: shared shell widgets (`AppSideMenu`, `ResponsiveScaffold` at both mobile/desktop breakpoints), individual auth widgets (`SubmitButton`, `PillTextField`, `LoginCard`, `CpfInputFormatter`), and the `LoginPage`/`HomePage` flows (error snackbar, success navigation, "remember me" pre-fill, side menu selection, quote category → WebView navigation, logout), with `AuthRepository`/`LoginCubit`/`HomeCubit` swapped for fakes via `get_it` so nothing touches real Firebase.
+* **Widget tests** — `test/core/{responsive,widgets}/`, `test/features/**/presentation/{pages,widgets}/`, and `test/widget_test.dart`: shared shell widgets (`AppSideMenu`, `ResponsiveScaffold` at both mobile/desktop breakpoints, `DevicePreviewShell` banner/phone toggle, `InsuraAppBar` logo vs. page icon + title), the WebView target lookup (unique ids across categories and menu items), individual auth widgets (`SubmitButton`, `PillTextField`, `LoginCard`, `CpfInputFormatter`), and the `LoginPage`/`HomePage` flows (error snackbar, success navigation, "remember me" pre-fill, side menu item / quote category → WebView navigation, logout), with `AuthRepository`/`LoginCubit`/`HomeCubit` swapped for fakes via `get_it` so nothing touches real Firebase.
 * **Integration test** — `integration_test/app_test.dart`: boots the real `App()`, including the `go_router` auth redirect guard, and drives the full flow — blocked `/home` while logged out → login → Home → logout → blocked `/home` again.
 
 Run unit + widget tests:
@@ -295,8 +309,6 @@ Widget tests reach for `firebase_auth_mocks`/`fake_cloud_firestore` whenever a t
 
 > The WebView screen's own tests (controller + widget, against a fake `WebViewPlatform`) live in the [`webview_page`](https://github.com/ronipaschoal/webview_page) package: clone it and run `flutter test` there.
 
-> TODO: set up a coverage report.
-
 ## 🔄 CI/CD
 
 GitHub Actions (`.github/workflows/main.yaml`) runs on every push/PR to `main` (and on manual `workflow_dispatch`):
@@ -304,17 +316,11 @@ GitHub Actions (`.github/workflows/main.yaml`) runs on every push/PR to `main` (
 1. **Build** — `flutter build web --release`, uploaded as the `web-release` artifact.
 2. **Deploy** — downloads that artifact and syncs it to the production host over FTP (`SamKirkland/FTP-Deploy-Action`, credentials from `FTP_SERVER`/`FTP_USERNAME`/`FTP_PASSWORD` repo secrets).
 
-> TODO: the pipeline doesn't run `flutter analyze`/`flutter test` yet — a red build still deploys as long as it compiles.
-
 ## 🌐 API and data
 
 Authentication runs against a real **Firebase** project (Authentication + Firestore). There is no other backend yet — no REST scaffolding is kept around for it either; that layer will be added if/when a real API shows up.
 
-> TODO: define the remaining API surface and backend communication strategy.
-
 ## 💡 Technical decisions
-
-> TODO: document the main architectural and technical decisions made during development.
 
 Some points that may be documented in the future:
 
@@ -343,7 +349,10 @@ Some points that may be documented in the future:
 * [x] Set up CI/CD (GitHub Actions — web release build + FTP deploy on push/PR to `main`)
 * [x] Architecture blueprint diagram (`docs/architecture-blueprint.html`) — runtime dependency graph, `get_it` registration order, external packages, directory tree
 * [ ] Registration flow (CPF-based sign-up)
-* [ ] Wire up the remaining side menu destinations (Minhas Contratações, Meus Sinistros, Minha Família, Meus Bens, Pagamentos, Coberturas, Validar Boleto, Telefones Importantes, Configurações)
+* [x] Side menu destinations and quote categories open the WebView with their own icon and title in the app bar
+* [ ] Build real screens for the remaining side menu destinations (Minhas Contratações, Meus Sinistros, Minha Família, Meus Bens, Pagamentos, Coberturas, Validar Boleto, Telefones Importantes, Configurações) — today they all open the same placeholder WebView
+* [x] Launcher icon from the brand logo (Android, iOS, web)
+* [x] Device preview on large screens (Web/Mobile toggle with a mocked phone)
 * [ ] Create requirements documentation
 * [ ] Define remaining API surface
 * [x] Extract the WebView screen into the standalone `webview_page` package, with its own tests

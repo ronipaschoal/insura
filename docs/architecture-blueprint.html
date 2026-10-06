@@ -650,7 +650,7 @@
 ├── main.dart                        <span class="note"># Firebase.initializeApp() + setupInjector()</span>
 ├── firebase_options.dart
 ├── <span class="dir">app/</span>
-│   ├── app.dart                     <span class="note"># MaterialApp.router + AppTheme.light</span>
+│   ├── app.dart                     <span class="note"># MaterialApp.router + AppTheme.light + DevicePreviewShell</span>
 │   └── <span class="dir">routes/</span>
 │       ├── app_router.dart          <span class="note"># GoRouter — reads getIt&lt;AuthCubit&gt; for redirect</span>
 │       ├── app_routes.dart
@@ -659,8 +659,8 @@
 │   ├── <span class="dir">di/</span>            injector.dart      <span class="note"># setupInjector() / resetInjector()</span>
 │   ├── <span class="dir">result/</span>        result.dart, failure.dart
 │   ├── <span class="dir">theme/</span>         app_theme.dart, app_colors.dart
-│   ├── <span class="dir">widgets/</span>       insura_logo.dart
-│   └── <span class="dir">responsive/</span>    breakpoints.dart, app_side_menu.dart, responsive_scaffold.dart
+│   ├── <span class="dir">widgets/</span>       insura_logo.dart, insura_app_bar.dart
+│   └── <span class="dir">responsive/</span>    breakpoints.dart, app_side_menu.dart, responsive_scaffold.dart, device_preview_shell.dart
 └── <span class="dir">features/</span>
     ├── <span class="dir">auth/</span>          <span class="note"># full layers</span>
     │   ├── <span class="dir">data/</span>
@@ -680,7 +680,7 @@
         └── <span class="dir">presentation/</span>
             ├── <span class="dir">cubit/</span>          home_cubit.dart, home_state.dart
             ├── <span class="dir">pages/</span>          home_page.dart
-            └── <span class="dir">widgets/</span>         home_nav_destinations, home_placeholder_card, home_quote_categories, home_welcome_banner
+            └── <span class="dir">widgets/</span>         home_nav_destinations, home_placeholder_card, home_quote_categories, home_webview_target(s), home_welcome_banner
                                <span class="note"># webview screen: webview_page package (../webview_page)</span>
 
 <span class="dir">test/</span>                          <span class="note"># mirrors lib/ by feature; fakes in test/support/fakes.dart</span>
